@@ -1,32 +1,37 @@
 <?php
 header("Content-Type: application/json");
+require_once "../config/database.php";
 
-require_once __DIR__ . "/../config/database.php";
-
-$database = new Database();
-$db = $database->getConnection();
+$conn = Database::getConnection();
 
 $user_id = $_GET["user_id"] ?? null;
 
-if ($user_id) {
-
-    $query = "SELECT i.qr_code, e.titulo, e.data_evento
-              FROM ingressos i
-              JOIN pedidos p ON i.id_pedido = p.id_pedido
-              JOIN eventos e ON i.id_evento = e.id_evento
-              WHERE p.id_user = :user_id";
-
-    $stmt = $db->prepare($query);
-    $stmt->bindParam(":user_id", $user_id);
-    $stmt->execute();
-
-    $ingressos = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
+if (!$user_id) {
     echo json_encode([
-        "status" => "success",
-        "dados" => $ingressos
+        "status" => "error",
+        "message" => "Usuário não informado"
     ]);
-
-} else {
-    echo json_encode(["status" => "error"]);
+    exit;
 }
+
+$sql = "SELECT 
+            i.id,
+            e.nome_evento AS titulo,
+            e.data_evento,
+            i.data_compra
+        FROM ingressos i
+        JOIN eventos e ON i.id_evento = e.id
+        WHERE i.id_usuario = :user_id";
+
+$stmt = $conn->prepare($sql);
+
+$stmt->execute([
+    ":user_id" => $user_id
+]);
+
+$ingressos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+echo json_encode([
+    "status" => "success",
+    "dados" => $ingressos
+]);
