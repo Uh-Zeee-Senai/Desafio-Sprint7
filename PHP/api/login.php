@@ -1,29 +1,44 @@
 <?php
 header("Content-Type: application/json");
+require_once "../config/database.php";
 
-// LER JSON DO PYTHON
-$dados = json_decode(file_get_contents("php://input"), true);
+$conn = Database::getConnection();
 
-$email = $dados["email"] ?? null;
-$senha = $dados["senha"] ?? null;
+$data = json_decode(file_get_contents("php://input"), true);
 
-if (!$email || !$senha) {
+$email = trim($data["email"] ?? "");
+$senha = trim($data["senha"] ?? "");
+
+$sql = "SELECT id_usuario, senha FROM usuarios WHERE email = :email";
+$stmt = $conn->prepare($sql);
+$stmt->bindParam(":email", $email);
+$stmt->execute();
+
+$user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+if($user){
+
+    if(password_verify($senha, $user["senha"])){
+
+        echo json_encode([
+            "status" => "success",
+            "user_id" => $user["id_usuario"]
+        ]);
+
+    }else{
+
+        echo json_encode([
+            "status" => "error",
+            "message" => "Credenciais inválidas"
+        ]);
+
+    }
+
+}else{
+
     echo json_encode([
         "status" => "error",
-        "message" => "Email ou senha não enviados"
+        "message" => "Usuário não encontrado"
     ]);
-    exit;
-}
 
-// SIMULA LOGIN (depois você conecta ao banco)
-if ($email == "admin@email.com" && $senha == "123") {
-    echo json_encode([
-        "status" => "success",
-        "user_id" => 1
-    ]);
-} else {
-    echo json_encode([
-        "status" => "error",
-        "message" => "Credenciais inválidas"
-    ]);
 }

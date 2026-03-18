@@ -4,11 +4,11 @@ import qrcode
 from io import BytesIO
 import base64
 
-API_CADASTRO = "http://localhost/DesafioSprint/php/api/cadastro.php"
-API_LOGIN = "http://localhost/DesafioSprint/php/api/login.php"
-API_EVENTOS = "http://localhost/DesafioSprint/php/api/eventos.php"
-API_COMPRAR = "http://localhost/DesafioSprint/php/api/comprar.php"
-API_MEUS_INGRESSOS = "http://localhost/DesafioSprint/php/api/meus_ingressos.php"
+API_CADASTRO = "http://localhost/Desafio_Sprint/php/api/cadastro.php"
+API_LOGIN = "http://localhost/Desafio_Sprint/php/api/login.php"
+API_EVENTOS = "http://localhost/Desafio_Sprint/php/api/eventos.php"
+API_COMPRAR = "http://localhost/Desafio_Sprint/php/api/comprar.php"
+API_MEUS_INGRESSOS = "http://localhost/Desafio_Sprint/php/api/meus_ingressos.php"
 
 usuario_logado = None
 

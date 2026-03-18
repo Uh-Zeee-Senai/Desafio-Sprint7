@@ -10,7 +10,7 @@ class Database {
         if (!self::$instance) {
             try {
                 self::$instance = new PDO(
-                    "mysql:host=" . self::$host . ";port=3307;dbname=" . self::$db_name . ";charset=utf8",
+                    "mysql:host=" . self::$host . ";port=3308;dbname=" . self::$db_name . ";charset=utf8",
                     self::$username,
                     self::$password
                 );
