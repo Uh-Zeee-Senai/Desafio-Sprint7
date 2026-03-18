@@ -12,16 +12,17 @@ API_MEUS_INGRESSOS = "http://localhost/Desafio_Sprint/php/api/meus_ingressos.php
 API_CRIAR_EVENTO = "http://localhost/Desafio_Sprint/php/api/criar_evento.php"
 
 usuario_logado = None
+usuario_admin = False
 
 
 def main(page: ft.Page):
-    global usuario_logado
+    global usuario_logado, usuario_admin
 
     page.title = "Loja de Eventos"
     page.theme_mode = ft.ThemeMode.DARK
     page.window_width = 400
     page.window_height = 700
-    page.padding = 20
+    page.padding = 15
 
     def app_bar(titulo):
         page.appbar = ft.AppBar(
@@ -64,10 +65,12 @@ def main(page: ft.Page):
                 mensagem.value = str(erro)
                 page.update()
 
-        page.add(nome, email, senha,
-                 ft.ElevatedButton("Cadastrar", on_click=cadastrar),
-                 ft.TextButton("Voltar", on_click=lambda e: tela_login()),
-                 mensagem)
+        page.add(
+            nome, email, senha,
+            ft.ElevatedButton("Cadastrar", on_click=cadastrar),
+            ft.TextButton("Voltar", on_click=lambda e: tela_login()),
+            mensagem
+        )
 
     # ---------------- LOGIN ----------------
     def tela_login():
@@ -79,7 +82,7 @@ def main(page: ft.Page):
         mensagem = ft.Text()
 
         def login(e):
-            global usuario_logado
+            global usuario_logado, usuario_admin
             try:
                 r = requests.post(API_LOGIN, json={
                     "email": email.value,
@@ -89,6 +92,7 @@ def main(page: ft.Page):
 
                 if dados["status"] == "success":
                     usuario_logado = dados["user_id"]
+                    usuario_admin = dados.get("is_admin", 0) == 1
                     tela_vitrine()
                 else:
                     mensagem.value = dados["message"]
@@ -99,13 +103,21 @@ def main(page: ft.Page):
                 mensagem.value = str(erro)
                 page.update()
 
-        page.add(email, senha,
-                 ft.ElevatedButton("Entrar", on_click=login),
-                 ft.TextButton("Criar Conta", on_click=lambda e: tela_cadastro()),
-                 mensagem)
+        page.add(
+            email, senha,
+            ft.ElevatedButton("Entrar", on_click=login),
+            ft.TextButton("Criar Conta", on_click=lambda e: tela_cadastro()),
+            mensagem
+        )
 
-    # ---------------- CRIAR EVENTO ----------------
+    # ---------------- CRIAR EVENTO (ADMIN) ----------------
     def tela_criar_evento():
+        if not usuario_admin:
+            page.snack_bar = ft.SnackBar(ft.Text("Apenas administradores"))
+            page.snack_bar.open = True
+            page.update()
+            return
+
         page.clean()
         app_bar("Criar Evento")
 
@@ -133,17 +145,38 @@ def main(page: ft.Page):
                 mensagem.value = str(erro)
                 page.update()
 
-        page.add(nome, descricao, data, preco,
-                 ft.ElevatedButton("Criar Evento", on_click=criar),
-                 ft.TextButton("Voltar", on_click=lambda e: tela_vitrine()),
-                 mensagem)
+        page.add(
+            nome, descricao, data, preco,
+            ft.ElevatedButton("Criar Evento", on_click=criar),
+            ft.TextButton("Voltar", on_click=lambda e: tela_vitrine()),
+            mensagem
+        )
+
+    # ---------------- PAGAMENTO ----------------
+    def escolher_pagamento(evento_id):
+        def pagar(tipo):
+            comprar_evento(evento_id, tipo)
+
+        dialog = ft.AlertDialog(
+            title=ft.Text("Escolha o pagamento"),
+            content=ft.Column([
+                ft.ElevatedButton("💳 Cartão", on_click=lambda e: pagar("cartao")),
+                ft.ElevatedButton("📱 Pix", on_click=lambda e: pagar("pix")),
+                ft.ElevatedButton("💵 Dinheiro", on_click=lambda e: pagar("dinheiro")),
+            ])
+        )
+
+        page.dialog = dialog
+        dialog.open = True
+        page.update()
 
     # ---------------- COMPRAR ----------------
-    def comprar_evento(evento_id):
+    def comprar_evento(evento_id, pagamento):
         try:
             r = requests.post(API_COMPRAR, data={
                 "user_id": usuario_logado,
-                "evento_id": evento_id
+                "evento_id": evento_id,
+                "pagamento": pagamento
             })
             dados = r.json()
 
@@ -170,6 +203,7 @@ def main(page: ft.Page):
             for evento in dados["dados"]:
                 lista.controls.append(
                     ft.Card(
+                        elevation=5,
                         content=ft.Container(
                             padding=15,
                             content=ft.Column([
@@ -179,7 +213,7 @@ def main(page: ft.Page):
                                 ft.Text(f"💰 R$ {evento['preco']}"),
                                 ft.ElevatedButton(
                                     "Comprar",
-                                    on_click=lambda e, id=evento["id"]: comprar_evento(id)
+                                    on_click=lambda e, id=evento["id"]: escolher_pagamento(id)
                                 )
                             ])
                         )
@@ -189,12 +223,18 @@ def main(page: ft.Page):
         except Exception as erro:
             lista.controls.append(ft.Text(str(erro)))
 
-        page.add(
-            lista,
+        botoes = [
             ft.ElevatedButton("Minha Wallet", on_click=lambda e: tela_wallet()),
-            ft.ElevatedButton("Criar Evento", on_click=lambda e: tela_criar_evento()),
-            ft.TextButton("Sair", on_click=lambda e: tela_login())
-        )
+        ]
+
+        if usuario_admin:
+            botoes.append(
+                ft.ElevatedButton("Criar Evento", on_click=lambda e: tela_criar_evento())
+            )
+
+        botoes.append(ft.TextButton("Sair", on_click=lambda e: tela_login()))
+
+        page.add(lista, *botoes)
 
     # ---------------- WALLET ----------------
     def tela_wallet():
