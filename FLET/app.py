@@ -3,6 +3,7 @@ import requests
 import qrcode
 from io import BytesIO
 import base64
+import webbrowser
 
 API_CADASTRO = "http://localhost/Desafio_Sprint/php/api/cadastro.php"
 API_LOGIN = "http://localhost/Desafio_Sprint/php/api/login.php"
@@ -187,6 +188,7 @@ def main(page: ft.Page):
 
         def criar(e):
             r = requests.post(API_CRIAR_EVENTO, json={
+                "user_id": usuario_logado,
                 "nome_evento": nome.value,
                 "descricao": descricao.value,
                 "data_evento": data.value,
@@ -331,24 +333,50 @@ def main(page: ft.Page):
         page.clean()
         app_bar("Validar")
 
-        campo = ft.TextField(label="QR")
+        campo = ft.TextField(label="QR Code", autofocus=True)
         resultado = ft.Text()
 
+        # 🔎 validar manual
         def validar(e):
-            r = requests.post(API_VALIDAR, json={
-                "qr_code": campo.value
-            })
+            try:
+                r = requests.post(API_VALIDAR, json={
+                    "qr_code": campo.value
+                })
 
-            dados = r.json()
+                dados = r.json()
 
-            resultado.value = dados["message"]
-            resultado.color = "green" if dados["status"] == "success" else "red"
-            page.update()
+                resultado.value = dados.get("message", "Sem resposta")
+                resultado.color = "green" if dados.get("status") == "success" else "red"
+
+                campo.value = ""
+                page.update()
+
+            except Exception as erro:
+                resultado.value = str(erro)
+                resultado.color = "red"
+                page.update()
+
+        # 📷 abrir leitor de QR com câmera (HTML externo)
+        def abrir_camera(e):
+            import webbrowser
+            webbrowser.open("http://localhost/Desafio_Sprint/PHP/assets/scanner.html")
+
+        campo.on_submit = validar
 
         page.add(
+            ft.Text("🎫 Validador de Ingressos", size=20, weight="bold"),
+
             campo,
-            ft.ElevatedButton("Validar", on_click=validar),
+
+            ft.Row([
+                ft.ElevatedButton("✅ Validar", on_click=validar),
+                ft.ElevatedButton("📷 Ler com câmera", on_click=abrir_camera)
+            ]),
+
+            ft.Divider(),
+
             resultado,
+
             ft.TextButton("Voltar", on_click=lambda e: tela_vitrine())
         )
 

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Scanner QR</title>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+</head>
+<body>
+
+<h2>Escaneie o QR Code</h2>
+<div id="reader" style="width:300px;"></div>
+
+<script>
+function onScanSuccess(decodedText) {
+    fetch("http://localhost/Desafio_Sprint/php/api/validar_ingresso.php", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ qr_code: decodedText })
+    })
+    .then(res => res.json())
+    .then(data => {
+        alert(data.message);
+    });
+}
+
+new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 })
+    .render(onScanSuccess);
+</script>
+
+</body>
+</html>

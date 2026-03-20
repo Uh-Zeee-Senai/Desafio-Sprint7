@@ -11,14 +11,15 @@ $data = $_POST["data_evento"] ?? null;
 $preco = $_POST["preco"] ?? null;
 
 // 🔒 VERIFICA ADMIN
-$stmt = $conn->prepare("SELECT is_admin FROM usuarios WHERE id_usuario = :id");
+$sql = "SELECT is_admin FROM usuarios WHERE id_usuario = :id";
+$stmt = $conn->prepare($sql);
 $stmt->execute([":id" => $user_id]);
-$user = $stmt->fetch();
+$user = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$user || $user["is_admin"] != 1) {
     echo json_encode([
         "status" => "error",
-        "message" => "Apenas administradores podem criar eventos"
+        "message" => "Apenas admins podem criar eventos"
     ]);
     exit;
 }
