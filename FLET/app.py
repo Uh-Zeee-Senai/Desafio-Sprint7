@@ -135,24 +135,40 @@ def main(page: ft.Page):
     # -------- VALIDAR --------
     def tela_validar():
         page.clean()
-        app_bar("Validar Ingresso")
+        app_bar("Check-in")
 
-        campo = ft.TextField(label="QR (INGRESSO:ID)")
-        resultado = ft.Text()
+        campo = ft.TextField(
+            label="Escaneie ou cole o QR",
+            autofocus=True
+        )
+
+        resultado = ft.Container()
 
         def validar(e):
+            if not campo.value:
+                return
+
             r = requests.post(API_VALIDAR, data={
                 "qr_code": campo.value
             })
             dados = r.json()
 
-            resultado.value = dados["message"]
-            resultado.color = "green" if dados["status"] == "success" else "red"
+            if dados["status"] == "success":
+                resultado.content = ft.Text("✔ Entrada liberada", size=20, color="green")
+                resultado.bgcolor = ft.colors.GREEN_100
+            else:
+                resultado.content = ft.Text(dados["message"], size=20, color="red")
+                resultado.bgcolor = ft.colors.RED_100
+
+            campo.value = ""  # limpa automaticamente
             page.update()
 
+        campo.on_submit = validar  # 🔥 ENTER AUTOMÁTICO
+
         page.add(
+            ft.Text("🎫 Validador de Ingressos", size=22, weight="bold"),
             campo,
-            ft.ElevatedButton("Validar", on_click=validar),
+            ft.Divider(),
             resultado,
             ft.TextButton("Voltar", on_click=lambda e: tela_vitrine())
         )
