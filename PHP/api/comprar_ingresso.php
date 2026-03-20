@@ -5,11 +5,22 @@ require_once "../config/database.php";
 $conn = Database::getConnection();
 
 // 🔥 RECEBE JSON
-$data = json_decode(file_get_contents("php://input"), true);
+$input = json_decode(file_get_contents("php://input"), true);
 
-$user_id = $data["user_id"] ?? null;
-$evento_id = $data["evento_id"] ?? null;
-$pagamento = $data["pagamento"] ?? null;
+// fallback para POST
+$user_id = $input["user_id"] ?? $_POST["user_id"] ?? null;
+$evento_id = $input["evento_id"] ?? $_POST["evento_id"] ?? null;
+$pagamento = $input["pagamento"] ?? $_POST["pagamento"] ?? null;
+
+echo json_encode([
+    "status" => "debug",
+    "post" => $_POST,
+    "input" => $input,
+    "user_id" => $user_id,
+    "evento_id" => $evento_id,
+    "pagamento" => $pagamento
+]);
+exit;
 
 if (!$user_id || !$evento_id || !$pagamento) {
     echo json_encode([
@@ -55,7 +66,8 @@ try {
     echo json_encode([
         "status" => "success",
         "message" => "Compra realizada com sucesso",
-        "codigo" => $codigo
+        "codigo" => $codigo,
+        "qr_code" => $qr_code
     ]);
 
 } catch (Exception $e) {
