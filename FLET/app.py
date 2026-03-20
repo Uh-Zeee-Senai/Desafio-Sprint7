@@ -3,13 +3,13 @@ import requests
 import qrcode
 from io import BytesIO
 import base64
-import uuid
 
 API_CADASTRO = "http://localhost/Desafio_Sprint/php/api/cadastro.php"
 API_LOGIN = "http://localhost/Desafio_Sprint/php/api/login.php"
 API_EVENTOS = "http://localhost/Desafio_Sprint/php/api/listar_eventos.php"
 API_COMPRAR = "http://localhost/Desafio_Sprint/php/api/comprar_ingresso.php"
 API_MEUS_INGRESSOS = "http://localhost/Desafio_Sprint/php/api/meus_ingressos.php"
+API_VALIDAR = "http://localhost/Desafio_Sprint/php/api/validar_ingresso.php"
 
 usuario_logado = None
 usuario_admin = False
@@ -50,21 +50,26 @@ def main(page: ft.Page):
         msg = ft.Text()
 
         def login(e):
-            global usuario_logado
-            r = requests.post(API_LOGIN, json={
-                "email": email.value,
-                "senha": senha.value
-            })
-            dados = r.json()
+            global usuario_logado, usuario_admin
+            try:
+                r = requests.post(API_LOGIN, data={
+                    "email": email.value,
+                    "senha": senha.value
+                })
+                dados = r.json()
 
-            if dados["status"] == "success":
-                usuario_logado = dados.get("user_id") or dados.get("id")
+                if dados["status"] == "success":
+                    usuario_logado = dados.get("user_id")
+                    usuario_admin = dados.get("is_admin") == 1
 
-                print("USER LOGADO:", usuario_logado)
+                    tela_vitrine()
+                else:
+                    msg.value = dados["message"]
+                    msg.color = "red"
+                    page.update()
 
-                tela_vitrine()
-            else:
-                msg.value = dados["message"]
+            except Exception as erro:
+                msg.value = str(erro)
                 msg.color = "red"
                 page.update()
 
@@ -77,31 +82,42 @@ def main(page: ft.Page):
         page.clean()
         app_bar("Eventos")
 
-        grid = ft.GridView(expand=True, max_extent=200)
+        grid = ft.GridView(expand=True, max_extent=250)
 
-        r = requests.get(API_EVENTOS)
-        dados = r.json()
+        try:
+            r = requests.get(API_EVENTOS)
+            dados = r.json()
 
-        for evento in dados["dados"]:
-            grid.controls.append(
-                ft.Container(
-                    bgcolor=ft.colors.GREY_900,
-                    padding=10,
-                    border_radius=10,
-                    content=ft.Column([
-                        ft.Text(evento["nome_evento"], weight="bold"),
-                        ft.Text(evento["descricao"], size=10),
-                        ft.Text(f"R$ {evento['preco']}"),
+            for evento in dados["dados"]:
+                grid.controls.append(
+                    ft.Container(
+                        bgcolor=ft.colors.GREY_900,
+                        padding=10,
+                        border_radius=10,
+                        content=ft.Column([
+                            ft.Text(evento["nome_evento"], weight="bold"),
+                            ft.Text(evento["descricao"], size=10),
+                            ft.Text(f"R$ {float(evento['preco']):.2f}"),
 
-                        ft.ElevatedButton(
-                            "Ver Evento",
-                            on_click=lambda e, ev=evento: tela_evento(ev)
-                        )
-                    ])
+                            ft.ElevatedButton(
+                                "Ver Evento",
+                                on_click=lambda e, ev=evento: tela_evento(ev)
+                            )
+                        ])
+                    )
                 )
+
+        except Exception as erro:
+            grid.controls.append(ft.Text(str(erro), color="red"))
+
+        botoes = []
+
+        if usuario_admin:
+            botoes.append(
+                ft.ElevatedButton("🎫 Validar Ingresso", on_click=lambda e: tela_validar())
             )
 
-        page.add(grid)
+        page.add(grid, ft.Row(botoes))
 
     # -------- DETALHE EVENTO --------
     def tela_evento(evento):
@@ -111,10 +127,17 @@ def main(page: ft.Page):
         qtd = ft.TextField(value="1", width=60)
 
         def adicionar_carrinho(e):
+            if not qtd.value.isdigit() or int(qtd.value) <= 0:
+                page.snack_bar = ft.SnackBar(ft.Text("Quantidade inválida"))
+                page.snack_bar.open = True
+                page.update()
+                return
+
             carrinho.append({
                 "evento": evento,
                 "quantidade": int(qtd.value)
             })
+
             page.snack_bar = ft.SnackBar(ft.Text("Adicionado ao carrinho"))
             page.snack_bar.open = True
             page.update()
@@ -123,12 +146,9 @@ def main(page: ft.Page):
             ft.Text(evento["nome_evento"], size=22, weight="bold"),
             ft.Text(evento["descricao"]),
             ft.Text(f"Data: {evento['data_evento']}"),
-            ft.Text(f"Preço: R$ {evento['preco']}"),
+            ft.Text(f"Preço: R$ {float(evento['preco']):.2f}"),
 
-            ft.Row([
-                ft.Text("Qtd: "),
-                qtd
-            ]),
+            ft.Row([ft.Text("Qtd:"), qtd]),
 
             ft.ElevatedButton("Adicionar ao Carrinho", on_click=adicionar_carrinho),
             ft.TextButton("Voltar", on_click=lambda e: tela_vitrine())
@@ -139,10 +159,21 @@ def main(page: ft.Page):
         page.clean()
         app_bar("Carrinho")
 
+        if not carrinho:
+            page.add(
+                ft.Text("🛒 Carrinho vazio", size=20),
+                ft.TextButton("Voltar", on_click=lambda e: tela_vitrine())
+            )
+            return
+
         lista = ft.Column()
         total = 0
 
-        for item in carrinho:
+        def remover_item(index):
+            carrinho.pop(index)
+            tela_carrinho()
+
+        for i, item in enumerate(carrinho):
             ev = item["evento"]
             qtd = item["quantidade"]
             subtotal = float(ev["preco"]) * qtd
@@ -150,20 +181,21 @@ def main(page: ft.Page):
 
             lista.controls.append(
                 ft.Container(
-                    bgcolor=ft.colors.GREY_900  ,
+                    bgcolor=ft.colors.GREY_900,
                     padding=10,
                     border_radius=10,
                     content=ft.Column([
                         ft.Text(ev["nome_evento"], weight="bold"),
                         ft.Text(f"Qtd: {qtd}"),
-                        ft.Text(f"Subtotal: R$ {subtotal}")
+                        ft.Text(f"Subtotal: R$ {subtotal:.2f}"),
+                        ft.TextButton("❌ Remover", on_click=lambda e, idx=i: remover_item(idx))
                     ])
                 )
             )
 
         page.add(
             lista,
-            ft.Text(f"Total: R$ {total}", size=18, weight="bold"),
+            ft.Text(f"Total: R$ {total:.2f}", size=18, weight="bold"),
             ft.ElevatedButton("Finalizar Compra", on_click=lambda e: tela_pagamento(total))
         )
 
@@ -172,49 +204,61 @@ def main(page: ft.Page):
         page.clean()
         app_bar("Pagamento")
 
+        metodo = ft.RadioGroup(
+            content=ft.Column([
+                ft.Radio(value="cartao", label="💳 Cartão"),
+                ft.Radio(value="pix", label="📱 Pix"),
+                ft.Radio(value="boleto", label="📄 Boleto"),
+                ft.Radio(value="dinheiro", label="💵 Dinheiro"),
+            ])
+        )
+
         resultado = ft.Text()
 
-        def pagar(tipo):
-            try:
-                codigos = []
+        def pagar(e):
+            if not metodo.value:
+                resultado.value = "Escolha um método de pagamento"
+                resultado.color = "red"
+                page.update()
+                return
 
-                for item in carrinho:
-                    for i in range(item["quantidade"]):
-                        r = requests.post(API_COMPRAR, json={
-                            "user_id": usuario_logado,
-                            "evento_id": item["evento"]["id"],
-                            "pagamento": tipo
+            codigos = []
+
+            for item in carrinho:
+                for _ in range(item["quantidade"]):
+                    try:
+                        r = requests.post(API_COMPRAR, data={
+                            "user_id": str(usuario_logado),
+                            "evento_id": str(item["evento"]["id"]),
+                            "pagamento": metodo.value
                         })
-                        print("USER LOGADO:", usuario_logado)
 
                         dados = r.json()
                         print("RESPOSTA API:", dados)
-                        
 
                         if dados.get("status") == "success":
                             codigos.append(dados.get("codigo", "sem código"))
                         else:
                             codigos.append("erro")
 
-                carrinho.clear()
+                    except:
+                        codigos.append("erro")
 
-                resultado.value = "Compra concluída!\nCódigos:\n" + "\n".join(codigos)
-                resultado.color = "green"
-                page.update()
+            carrinho.clear()
 
-            except Exception as erro:
-                resultado.value = str(erro)
-                resultado.color = "red"
-                page.update()
+            page.snack_bar = ft.SnackBar(ft.Text("Compra realizada com sucesso! 🎉"))
+            page.snack_bar.open = True
+
+            resultado.value = "Códigos:\n" + "\n".join(codigos)
+            resultado.color = "green"
+            page.update()
 
         page.add(
-            ft.Text(f"Total: R$ {total}", size=20),
-
-            ft.ElevatedButton("💳 Cartão", on_click=lambda e: pagar("cartao")),
-            ft.ElevatedButton("📱 Pix", on_click=lambda e: pagar("pix")),
-            ft.ElevatedButton("📄 Boleto", on_click=lambda e: pagar("boleto")),
-            ft.ElevatedButton("💵 Dinheiro", on_click=lambda e: pagar("dinheiro")),
-
+            ft.Text(f"Total: R$ {total:.2f}", size=22, weight="bold"),
+            ft.Divider(),
+            ft.Text("Selecione o pagamento:"),
+            metodo,
+            ft.ElevatedButton("Finalizar Pagamento", on_click=pagar),
             ft.Divider(),
             resultado,
             ft.ElevatedButton("Ver Ingressos", on_click=lambda e: tela_wallet())
@@ -233,23 +277,21 @@ def main(page: ft.Page):
 
             for ing in dados["dados"]:
                 codigo = ing.get("codigo_compra", "N/A")
-                qr_texto = ing.get("qr_code", codigo)
-
-                qr = gerar_qr(qr_texto)
+                qr = gerar_qr(ing.get("qr_code", codigo))
 
                 lista.controls.append(
-                    ft.Container(
-                        bgcolor=ft.colors.GREY_900,
-                        padding=15,
-                        border_radius=12,
-                        content=ft.Column([
-                            ft.Text(ing.get("titulo", "Evento"), weight="bold", size=16),
-                            ft.Text(f"📅 {ing.get('data_evento','')}"),
-                            ft.Text(f"💳 {ing.get('pagamento','')}"),
-                            ft.Text(f"💰 R$ {ing.get('valor','')}"),
-                            ft.Text(f"🎫 Código: {codigo}", size=10),
-                            ft.Image(src_base64=qr, width=140)
-                        ])
+                    ft.Card(
+                        content=ft.Container(
+                            padding=15,
+                            content=ft.Column([
+                                ft.Text(ing.get("titulo"), weight="bold"),
+                                ft.Text(f"📅 {ing.get('data_evento')}"),
+                                ft.Text(f"💳 {ing.get('pagamento')}"),
+                                ft.Text(f"💰 R$ {ing.get('valor')}"),
+                                ft.Text(f"🎫 Código: {codigo}", size=10),
+                                ft.Image(src_base64=qr, width=140)
+                            ], horizontal_alignment="center")
+                        )
                     )
                 )
 
@@ -258,7 +300,42 @@ def main(page: ft.Page):
 
         page.add(lista)
 
-    tela_login()
+    # -------- VALIDAR --------
+    def tela_validar():
+        page.clean()
+        app_bar("Check-in")
 
+        campo = ft.TextField(label="QR Code", autofocus=True)
+        resultado = ft.Text()
+
+        def validar(e):
+            try:
+                r = requests.post(API_VALIDAR, data={
+                    "qr_code": campo.value
+                })
+
+                dados = r.json()
+
+                resultado.value = dados["message"]
+                resultado.color = "green" if dados["status"] == "success" else "red"
+
+                campo.value = ""
+                page.update()
+
+            except Exception as erro:
+                resultado.value = str(erro)
+                resultado.color = "red"
+                page.update()
+
+        campo.on_submit = validar
+
+        page.add(
+            ft.Text("🎫 Validador de Ingressos", size=20),
+            campo,
+            resultado,
+            ft.TextButton("Voltar", on_click=lambda e: tela_vitrine())
+        )
+
+    tela_login()
 
 ft.app(target=main)
