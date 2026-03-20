@@ -16,7 +16,6 @@ usuario_logado = None
 usuario_admin = False
 carrinho = []
 
-
 def main(page: ft.Page):
     global usuario_logado, usuario_admin, carrinho
 
@@ -95,12 +94,14 @@ def main(page: ft.Page):
         page.clean()
         app_bar("Cadastro")
 
+        nome = ft.TextField(label="Nome")
         email = ft.TextField(label="Email")
         senha = ft.TextField(label="Senha", password=True)
         msg = ft.Text()
 
         def cadastrar(e):
             r = requests.post(API_CADASTRO, json={
+                "nome": nome.value,
                 "email": email.value,
                 "senha": senha.value
             })
@@ -112,6 +113,7 @@ def main(page: ft.Page):
             page.update()
 
         page.add(
+            nome,
             email,
             senha,
             ft.ElevatedButton("Cadastrar", on_click=cadastrar),
@@ -151,11 +153,19 @@ def main(page: ft.Page):
         botoes_admin = []
 
         if usuario_admin:
-            botoes_admin.append(
-                ft.ElevatedButton("➕ Criar Evento", on_click=lambda e: tela_criar_evento())
-            )
-            botoes_admin.append(
-                ft.ElevatedButton("🎫 Validar Ingresso", on_click=lambda e: tela_validar())
+            page.add(
+                ft.Container(
+                    content=ft.Column([
+                        ft.Text("🔧 Painel Admin", size=18, weight="bold"),
+                        ft.Row([
+                            ft.ElevatedButton("➕ Criar Evento", on_click=lambda e: tela_criar_evento()),
+                            ft.ElevatedButton("🎫 Validar Ingresso", on_click=lambda e: tela_validar())
+                        ])
+                    ]),
+                    bgcolor=ft.colors.GREY_800,
+                    padding=10,
+                    border_radius=10
+                )
             )
 
         page.add(
