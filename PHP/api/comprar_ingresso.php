@@ -4,42 +4,30 @@ require_once "../config/database.php";
 
 $conn = Database::getConnection();
 
-// 🔥 RECEBE JSON
+// RECEBE JSON OU POST
 $input = json_decode(file_get_contents("php://input"), true);
 
-// fallback para POST
 $user_id = $input["user_id"] ?? $_POST["user_id"] ?? null;
 $evento_id = $input["evento_id"] ?? $_POST["evento_id"] ?? null;
 $pagamento = $input["pagamento"] ?? $_POST["pagamento"] ?? null;
 
-echo json_encode([
-    "status" => "debug",
-    "post" => $_POST,
-    "input" => $input,
-    "user_id" => $user_id,
-    "evento_id" => $evento_id,
-    "pagamento" => $pagamento
-]);
-exit;
-
 if (!$user_id || !$evento_id || !$pagamento) {
     echo json_encode([
         "status" => "error",
-        "message" => "Dados incompletos",
-        "debug" => $data
+        "message" => "Dados incompletos"
     ]);
     exit;
 }
 
 try {
 
-    // 🔹 GERAR CODIGO
+    // GERAR CODIGO
     $codigo = uniqid("ING_");
 
-    // 🔹 QR (TEXTO)
+    // QR TEXTO
     $qr_code = $codigo . "|" . $evento_id;
 
-    // 🔹 PEGAR PREÇO
+    // BUSCAR PREÇO
     $sql_evento = "SELECT preco FROM eventos WHERE id = :id";
     $stmt = $conn->prepare($sql_evento);
     $stmt->execute([":id" => $evento_id]);
@@ -47,7 +35,7 @@ try {
 
     $valor = $evento["preco"] ?? 0;
 
-    // 🔹 INSERT
+    // INSERIR
     $sql = "INSERT INTO ingressos 
     (id_usuario, id_evento, qr_code, codigo_compra, pagamento, valor)
     VALUES (:user, :evento, :qr, :codigo, :pagamento, :valor)";
@@ -65,7 +53,7 @@ try {
 
     echo json_encode([
         "status" => "success",
-        "message" => "Compra realizada com sucesso",
+        "message" => "Compra realizada",
         "codigo" => $codigo,
         "qr_code" => $qr_code
     ]);
@@ -75,6 +63,6 @@ try {
     echo json_encode([
         "status" => "error",
         "message" => "Erro ao salvar",
-        "erro_real" => $e->getMessage()
+        "erro" => $e->getMessage()
     ]);
 }
