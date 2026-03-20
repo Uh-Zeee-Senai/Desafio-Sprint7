@@ -4,39 +4,44 @@ require_once "../config/database.php";
 
 $conn = Database::getConnection();
 
-$user_id = $_POST["user_id"] ?? null;
-$evento_id = $_POST["evento_id"] ?? null;
+// 🔥 LER JSON
+$data = json_decode(file_get_contents("php://input"), true);
 
-if (!$user_id || !$evento_id) {
+$user_id = $data["user_id"] ?? null;
+$evento_id = $data["evento_id"] ?? null;
+$pagamento = $data["pagamento"] ?? null;
+
+if (!$user_id || !$evento_id || !$pagamento) {
     echo json_encode([
         "status" => "error",
-        "message" => "Dados incompletos"
+        "message" => "Dados incompletos",
+        "debug" => $data // 👈 ajuda a ver o que chegou
     ]);
     exit;
 }
 
-// cria ingresso
-$sql = "INSERT INTO ingressos (id_usuario, id_evento) VALUES (:user_id, :evento_id)";
+$sql = "SELECT 
+            i.id,
+            e.nome_evento AS titulo,
+            e.data_evento,
+            i.data_compra,
+            i.codigo_compra,
+            i.qr_code,
+            i.pagamento,
+            i.valor
+        FROM ingressos i
+        JOIN eventos e ON i.id_evento = e.id
+        WHERE i.id_usuario = :user_id
+        ORDER BY i.id DESC";
+
 $stmt = $conn->prepare($sql);
 $stmt->execute([
-    ":user_id" => $user_id,
-    ":evento_id" => $evento_id
+    ":user_id" => $user_id
 ]);
 
-$id_ingresso = $conn->lastInsertId();
-
-// gera QR único
-$qr_code = "INGRESSO:" . $id_ingresso;
-
-// salva QR
-$sql2 = "UPDATE ingressos SET qr_code = :qr WHERE id = :id";
-$stmt2 = $conn->prepare($sql2);
-$stmt2->execute([
-    ":qr" => $qr_code,
-    ":id" => $id_ingresso
-]);
+$ingressos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 echo json_encode([
     "status" => "success",
-    "message" => "Ingresso comprado com sucesso"
+    "dados" => $ingressos
 ]);

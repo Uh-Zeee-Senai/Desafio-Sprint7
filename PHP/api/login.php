@@ -23,7 +23,7 @@ if ($user) {
         echo json_encode([
             "status" => "success",
             "user_id" => $user["id_usuario"],
-            "is_admin" => $user["is_admin"]
+            "is_admin" => $user["is_admin"] ?? 0
         ]);
 
     } else {

@@ -18,6 +18,10 @@ $sql = "SELECT
             i.id,
             e.nome_evento AS titulo,
             e.data_evento,
+            i.qr_code,
+            i.codigo_compra,
+            i.pagamento,
+            i.valor,
             i.data_compra
         FROM ingressos i
         JOIN eventos e ON i.id_evento = e.id
