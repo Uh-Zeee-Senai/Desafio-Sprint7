@@ -4,21 +4,22 @@ require_once "../config/database.php";
 
 $conn = Database::getConnection();
 
-$data = json_decode(file_get_contents("php://input"), true);
-$qr = $data["qr_code"] ?? null;
+// 🔥 RECEBER JSON
+$input = json_decode(file_get_contents("php://input"), true);
+$qr_code = $input["qr_code"] ?? null;
 
-if (!$qr) {
+if (!$qr_code) {
     echo json_encode([
         "status" => "error",
-        "message" => "QR não informado"
+        "message" => "QR Code não informado"
     ]);
     exit;
 }
 
-// 🔎 BUSCAR INGRESSO
+// 🔍 BUSCAR INGRESSO
 $sql = "SELECT * FROM ingressos WHERE qr_code = :qr";
 $stmt = $conn->prepare($sql);
-$stmt->execute([":qr" => $qr]);
+$stmt->execute([":qr" => $qr_code]);
 
 $ingresso = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -30,8 +31,8 @@ if (!$ingresso) {
     exit;
 }
 
-// 🔴 JÁ USADO
-if ($ingresso["status"] == "usado") {
+// ❌ JÁ USADO
+if ($ingresso["usado"] == 1) {
     echo json_encode([
         "status" => "error",
         "message" => "Ingresso já utilizado"
@@ -40,11 +41,14 @@ if ($ingresso["status"] == "usado") {
 }
 
 // ✅ MARCAR COMO USADO
-$sql = "UPDATE ingressos SET status = 'usado' WHERE id = :id";
+$sql = "UPDATE ingressos 
+        SET usado = 1, data_validacao = NOW()
+        WHERE id = :id";
+
 $stmt = $conn->prepare($sql);
 $stmt->execute([":id" => $ingresso["id"]]);
 
 echo json_encode([
     "status" => "success",
-    "message" => "Entrada liberada"
+    "message" => "Entrada liberada ✅"
 ]);
