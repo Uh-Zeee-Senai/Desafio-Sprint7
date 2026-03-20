@@ -4,14 +4,18 @@ require_once "../config/database.php";
 
 $conn = Database::getConnection();
 
-$qr = $_POST["qr_code"] ?? null;
+$data = json_decode(file_get_contents("php://input"), true);
+$qr = $data["qr_code"] ?? null;
 
 if (!$qr) {
-    echo json_encode(["status" => "error"]);
+    echo json_encode([
+        "status" => "error",
+        "message" => "QR não informado"
+    ]);
     exit;
 }
 
-// VERIFICA
+// 🔎 BUSCAR INGRESSO
 $sql = "SELECT * FROM ingressos WHERE qr_code = :qr";
 $stmt = $conn->prepare($sql);
 $stmt->execute([":qr" => $qr]);
@@ -19,18 +23,26 @@ $stmt->execute([":qr" => $qr]);
 $ingresso = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$ingresso) {
-    echo json_encode(["status" => "error", "message" => "Inválido"]);
+    echo json_encode([
+        "status" => "error",
+        "message" => "Ingresso inválido"
+    ]);
     exit;
 }
 
+// 🔴 JÁ USADO
 if ($ingresso["status"] == "usado") {
-    echo json_encode(["status" => "error", "message" => "Já utilizado"]);
+    echo json_encode([
+        "status" => "error",
+        "message" => "Ingresso já utilizado"
+    ]);
     exit;
 }
 
-// MARCAR COMO USADO
-$conn->prepare("UPDATE ingressos SET status='usado' WHERE id = :id")
-     ->execute([":id" => $ingresso["id"]]);
+// ✅ MARCAR COMO USADO
+$sql = "UPDATE ingressos SET status = 'usado' WHERE id = :id";
+$stmt = $conn->prepare($sql);
+$stmt->execute([":id" => $ingresso["id"]]);
 
 echo json_encode([
     "status" => "success",
