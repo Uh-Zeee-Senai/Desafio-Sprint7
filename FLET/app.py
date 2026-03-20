@@ -16,6 +16,7 @@ usuario_logado = None
 usuario_admin = False
 carrinho = []
 
+
 def main(page: ft.Page):
     global usuario_logado, usuario_admin, carrinho
 
@@ -70,7 +71,10 @@ def main(page: ft.Page):
 
             if dados["status"] == "success":
                 usuario_logado = int(dados["user_id"])
-                usuario_admin = dados.get("is_admin") == 1
+                usuario_admin = str(dados.get("is_admin")) == "1"
+
+                print("USER:", usuario_logado)
+                print("ADMIN:", usuario_admin)
 
                 tela_vitrine()
             else:
@@ -154,16 +158,20 @@ def main(page: ft.Page):
                 ft.ElevatedButton("🎫 Validar Ingresso", on_click=lambda e: tela_validar())
             )
 
-        page.add(grid, ft.Row(botoes_admin))
+        page.add(
+            grid,
+            ft.Divider(),
+            ft.Row(botoes_admin)
+        )
 
-    # -------- CRIAR EVENTO (ADMIN) --------
+    # -------- CRIAR EVENTO --------
     def tela_criar_evento():
         page.clean()
         app_bar("Criar Evento")
 
         nome = ft.TextField(label="Nome")
         descricao = ft.TextField(label="Descrição")
-        data = ft.TextField(label="Data")
+        data = ft.TextField(label="Data (YYYY-MM-DD)")
         preco = ft.TextField(label="Preço")
         msg = ft.Text()
 
@@ -176,12 +184,17 @@ def main(page: ft.Page):
             })
 
             dados = r.json()
-            msg.value = dados["message"]
+
+            msg.value = dados.get("message", "")
+            msg.color = "green" if dados["status"] == "success" else "red"
             page.update()
 
-        page.add(nome, descricao, data, preco,
-                 ft.ElevatedButton("Criar", on_click=criar),
-                 msg)
+        page.add(
+            nome, descricao, data, preco,
+            ft.ElevatedButton("Criar", on_click=criar),
+            msg,
+            ft.TextButton("Voltar", on_click=lambda e: tela_vitrine())
+        )
 
     # -------- EVENTO --------
     def tela_evento(evento):
@@ -195,6 +208,7 @@ def main(page: ft.Page):
                 "evento": evento,
                 "quantidade": int(qtd.value)
             })
+
             page.snack_bar = ft.SnackBar(ft.Text("Adicionado ao carrinho"))
             page.snack_bar.open = True
             page.update()
@@ -204,7 +218,8 @@ def main(page: ft.Page):
             ft.Text(evento["descricao"]),
             ft.Text(f"Preço: R$ {evento['preco']}"),
             ft.Row([ft.Text("Qtd"), qtd]),
-            ft.ElevatedButton("Adicionar ao Carrinho", on_click=add)
+            ft.ElevatedButton("Adicionar ao Carrinho", on_click=add),
+            ft.TextButton("Voltar", on_click=lambda e: tela_vitrine())
         )
 
     # -------- CARRINHO --------
@@ -226,7 +241,8 @@ def main(page: ft.Page):
         page.add(
             lista,
             ft.Text(f"Total: R$ {total:.2f}"),
-            ft.ElevatedButton("Finalizar", on_click=lambda e: tela_pagamento(total))
+            ft.ElevatedButton("Finalizar", on_click=lambda e: tela_pagamento(total)),
+            ft.TextButton("Voltar", on_click=lambda e: tela_vitrine())
         )
 
     # -------- PAGAMENTO --------
@@ -250,17 +266,16 @@ def main(page: ft.Page):
 
             for item in carrinho:
                 for _ in range(item["quantidade"]):
-
-                    r = requests.post(API_COMPRAR, data={
-                        "user_id": str(usuario_logado),
-                        "evento_id": str(item["evento"]["id"]),
+                    r = requests.post(API_COMPRAR, json={
+                        "user_id": usuario_logado,
+                        "evento_id": item["evento"]["id"],
                         "pagamento": metodo.value
                     })
 
                     dados = r.json()
 
-                    if dados["status"] == "success":
-                        codigos.append(dados["codigo"])
+                    if dados.get("status") == "success":
+                        codigos.append(dados.get("codigo", "sem código"))
                     else:
                         codigos.append("erro")
 
@@ -274,7 +289,8 @@ def main(page: ft.Page):
             ft.Text(f"Total: R$ {total:.2f}"),
             metodo,
             ft.ElevatedButton("Pagar", on_click=pagar),
-            resultado
+            resultado,
+            ft.ElevatedButton("Ver Ingressos", on_click=lambda e: tela_wallet())
         )
 
     # -------- WALLET --------
@@ -298,7 +314,7 @@ def main(page: ft.Page):
                 ])
             )
 
-        page.add(lista)
+        page.add(lista, ft.TextButton("Voltar", on_click=lambda e: tela_vitrine()))
 
     # -------- VALIDAR --------
     def tela_validar():
@@ -309,15 +325,24 @@ def main(page: ft.Page):
         resultado = ft.Text()
 
         def validar(e):
-            r = requests.post(API_VALIDAR, data={"qr_code": campo.value})
+            r = requests.post(API_VALIDAR, json={
+                "qr_code": campo.value
+            })
+
             dados = r.json()
 
             resultado.value = dados["message"]
             resultado.color = "green" if dados["status"] == "success" else "red"
             page.update()
 
-        page.add(campo, ft.ElevatedButton("Validar", on_click=validar), resultado)
+        page.add(
+            campo,
+            ft.ElevatedButton("Validar", on_click=validar),
+            resultado,
+            ft.TextButton("Voltar", on_click=lambda e: tela_vitrine())
+        )
 
     tela_login()
+
 
 ft.app(target=main)
