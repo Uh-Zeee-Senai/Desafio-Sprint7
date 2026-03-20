@@ -319,12 +319,25 @@ def main(page: ft.Page):
         for ing in dados["dados"]:
             qr = gerar_qr(ing["qr_code"])
 
+            usado = ing.get("usado", 0)
+
+            status_texto = "✅ Usado" if usado == 1 else "❌ Não usado"
+            status_cor = "green" if usado == 1 else "red"
+
             lista.controls.append(
-                ft.Column([
-                    ft.Text(ing["titulo"]),
-                    ft.Text(ing["codigo_compra"]),
-                    ft.Image(src_base64=qr, width=120)
-                ])
+                ft.Card(
+                    content=ft.Container(
+                        padding=10,
+                        content=ft.Column([
+                            ft.Text(ing["titulo"], weight="bold"),
+                            ft.Text(f"Código: {ing['codigo_compra']}"),
+                            
+                            ft.Text(status_texto, color=status_cor, size=16),
+
+                            ft.Image(src_base64=qr, width=120)
+                        ], horizontal_alignment="center")
+                    )
+                )
             )
 
         page.add(lista, ft.TextButton("Voltar", on_click=lambda e: tela_vitrine()))

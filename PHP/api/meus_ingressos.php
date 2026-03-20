@@ -22,6 +22,7 @@ $sql = "SELECT
             i.codigo_compra,
             i.pagamento,
             i.valor,
+            i.usado,
             i.data_compra
         FROM ingressos i
         JOIN eventos e ON i.id_evento = e.id
