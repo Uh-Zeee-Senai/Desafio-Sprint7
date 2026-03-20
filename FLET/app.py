@@ -187,6 +187,7 @@ def main(page: ft.Page):
         msg = ft.Text()
 
         def criar(e):
+            print("ENVIANDO USER:", usuario_logado)
             r = requests.post(API_CRIAR_EVENTO, json={
                 "user_id": usuario_logado,
                 "nome_evento": nome.value,
