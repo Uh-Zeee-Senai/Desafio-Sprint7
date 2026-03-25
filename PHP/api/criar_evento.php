@@ -13,14 +13,13 @@ $nome = $input["nome_evento"] ?? null;
 $descricao = $input["descricao"] ?? null;
 $data = $input["data_evento"] ?? null;
 $preco = $input["preco"] ?? null;
-$imagem = $input["imagem"] ?? $_POST["imagem"] ?? "";
+$imagem_base64 = $input["imagem"] ?? "";
 
-// 🔍 DEBUG (opcional)
+// 🔍 VALIDAÇÃO
 if (!$user_id || !$nome || !$descricao || !$data || !$preco) {
     echo json_encode([
         "status" => "error",
-        "message" => "Dados incompletos",
-        "debug" => $input
+        "message" => "Dados incompletos"
     ]);
     exit;
 }
@@ -35,10 +34,29 @@ $user = $stmt->fetch(PDO::FETCH_ASSOC);
 if (!$user || $user["is_admin"] != 1) {
     echo json_encode([
         "status" => "error",
-        "message" => "Apenas admins podem criar eventos",
-        "debug_user" => $user
+        "message" => "Apenas admins podem criar eventos"
     ]);
     exit;
+}
+
+// 🔥 SALVAR IMAGEM (SE EXISTIR)
+$url_imagem = null;
+
+if (!empty($imagem_base64)) {
+
+    // cria pasta uploads se não existir
+    $pasta = "../uploads/";
+    if (!file_exists($pasta)) {
+        mkdir($pasta, 0777, true);
+    }
+
+    $nome_arquivo = uniqid() . ".jpg";
+    $caminho = $pasta . $nome_arquivo;
+
+    file_put_contents($caminho, base64_decode($imagem_base64));
+
+    // ⚠️ MUDA ISSO QUANDO FOR PUBLICAR
+    $url_imagem = "http://localhost/Desafio_Sprint/php/uploads/" . $nome_arquivo;
 }
 
 // 🔥 INSERIR EVENTO
@@ -53,7 +71,7 @@ try {
         ":descricao" => $descricao,
         ":data" => $data,
         ":preco" => $preco,
-        ":imagem" => $imagem
+        ":imagem" => $url_imagem
     ]);
 
     echo json_encode([
