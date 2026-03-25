@@ -271,15 +271,35 @@ def main(page: ft.Page):
             page.update()
 
         page.add(
-            ft.Column([
-                ft.Image(src=evento.get("imagem", ""), height=260),
-                ft.Text(evento["nome_evento"], size=24, weight="bold"),
-                ft.Text(evento["descricao"]),
-                ft.Text(f"Preço: R$ {evento['preco']}", size=18),
-                ft.Row([ft.Text("Qtd"), qtd], alignment="center"),
-                ft.ElevatedButton("Adicionar ao Carrinho", width=220, height=45, on_click=add),
-                ft.TextButton("Voltar", on_click=lambda e: tela_vitrine())
-            ], horizontal_alignment="center")
+            ft.Container(
+                padding=20,
+                content=ft.Column([
+                    ft.Image(
+                        src=evento.get("imagem") if evento.get("imagem") else "https://via.placeholder.com/400x250",
+                        height=250,
+                        fit=ft.ImageFit.COVER
+                    ),
+
+                    ft.Text(evento["nome_evento"], size=26, weight="bold"),
+
+                    ft.Text(evento["descricao"], size=14),
+
+                    ft.Text(f"Preço: R$ {evento['preco']}", size=18, color="#22c55e"),
+
+                    ft.Row([
+                        ft.Text("Quantidade:"),
+                        qtd
+                    ]),
+
+                    ft.ElevatedButton(
+                        "Adicionar ao Carrinho",
+                        height=45,
+                        on_click=add
+                    ),
+
+                    ft.TextButton("Voltar", on_click=lambda e: tela_vitrine())
+                ])
+            )
         )
 
     # -------- CARRINHO --------
@@ -371,12 +391,17 @@ def main(page: ft.Page):
             status = "✅ Usado" if usado == 1 else "❌ Não usado"
 
             lista.controls.append(
-                ft.Column([
-                    ft.Text(ing["titulo"]),
-                    ft.Text(ing["codigo_compra"]),
-                    ft.Text(status),
-                    ft.Image(src_base64=qr, width=120)
-                ])
+                ft.Card(
+                    content=ft.Container(
+                        padding=15,
+                        content=ft.Column([
+                            ft.Text(ing["titulo"], weight="bold"),
+                            ft.Text(f"Código: {ing['codigo_compra']}"),
+                            ft.Text(status),
+                            ft.Image(src_base64=qr, width=120)
+                        ])
+                    )
+                )
             )
 
         page.add(lista)
