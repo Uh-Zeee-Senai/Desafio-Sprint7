@@ -18,7 +18,6 @@ usuario_logado = None
 usuario_admin = False
 carrinho = []
 
-
 def main(page: ft.Page):
     global usuario_logado, usuario_admin, carrinho
 
@@ -27,23 +26,17 @@ def main(page: ft.Page):
     page.scroll = ft.ScrollMode.AUTO
 
     page.bgcolor = "#0f172a"
-    page.theme = ft.Theme(
-        color_scheme=ft.ColorScheme(
-            primary="#3b82f6",
-            secondary="#22c55e",
-            background="#0f172a"
-        )
-    )
 
     # -------- APP BAR --------
     def app_bar(titulo):
         page.appbar = ft.AppBar(
-            title=ft.Text(titulo),
+            title=ft.Text(titulo, size=20, weight="bold"),
             bgcolor=ft.colors.BLUE_700,
+            center_title=True,
             actions=[
-                ft.IconButton(icon=ft.icons.SHOPPING_CART, on_click=lambda e: tela_carrinho()),
-                ft.IconButton(icon=ft.icons.CONFIRMATION_NUMBER, on_click=lambda e: tela_wallet()),
-                ft.IconButton(icon=ft.icons.LOGOUT, on_click=lambda e: logout())
+                ft.IconButton(icon=ft.icons.SHOPPING_CART, icon_size=28, on_click=lambda e: tela_carrinho()),
+                ft.IconButton(icon=ft.icons.CONFIRMATION_NUMBER, icon_size=28, on_click=lambda e: tela_wallet()),
+                ft.IconButton(icon=ft.icons.LOGOUT, icon_size=28, on_click=lambda e: logout())
             ]
         )
 
@@ -66,8 +59,8 @@ def main(page: ft.Page):
         page.clean()
         app_bar("Login")
 
-        email = ft.TextField(label="Email")
-        senha = ft.TextField(label="Senha", password=True)
+        email = ft.TextField(label="Email", width=320)
+        senha = ft.TextField(label="Senha", password=True, width=320)
         msg = ft.Text()
 
         def login(e):
@@ -83,10 +76,6 @@ def main(page: ft.Page):
             if dados["status"] == "success":
                 usuario_logado = int(dados["user_id"])
                 usuario_admin = str(dados.get("is_admin")) == "1"
-
-                print("USER:", usuario_logado)
-                print("ADMIN:", usuario_admin)
-
                 tela_vitrine()
             else:
                 msg.value = dados["message"]
@@ -94,11 +83,13 @@ def main(page: ft.Page):
                 page.update()
 
         page.add(
-            email,
-            senha,
-            ft.ElevatedButton("Entrar", on_click=login),
-            ft.TextButton("Criar conta", on_click=lambda e: tela_cadastro()),
-            msg
+            ft.Column([
+                email,
+                senha,
+                ft.ElevatedButton("Entrar", width=220, on_click=login),
+                ft.TextButton("Criar conta", on_click=lambda e: tela_cadastro()),
+                msg
+            ], horizontal_alignment="center", alignment="center")
         )
 
     # -------- CADASTRO --------
@@ -106,9 +97,9 @@ def main(page: ft.Page):
         page.clean()
         app_bar("Cadastro")
 
-        nome = ft.TextField(label="Nome")
-        email = ft.TextField(label="Email")
-        senha = ft.TextField(label="Senha", password=True)
+        nome = ft.TextField(label="Nome", width=320)
+        email = ft.TextField(label="Email", width=320)
+        senha = ft.TextField(label="Senha", password=True, width=320)
         msg = ft.Text()
 
         def cadastrar(e):
@@ -125,12 +116,14 @@ def main(page: ft.Page):
             page.update()
 
         page.add(
-            nome,
-            email,
-            senha,
-            ft.ElevatedButton("Cadastrar", on_click=cadastrar),
-            ft.TextButton("Voltar", on_click=lambda e: tela_login()),
-            msg
+            ft.Column([
+                nome,
+                email,
+                senha,
+                ft.ElevatedButton("Cadastrar", width=220, on_click=cadastrar),
+                ft.TextButton("Voltar", on_click=lambda e: tela_login()),
+                msg
+            ], horizontal_alignment="center")
         )
 
     # -------- VITRINE --------
@@ -138,7 +131,12 @@ def main(page: ft.Page):
         page.clean()
         app_bar("Eventos")
 
-        grid = ft.GridView(expand=True, max_extent=250)
+        grid = ft.GridView(
+            expand=True,
+            max_extent=420,  # 🔥 MAIOR
+            spacing=20,
+            run_spacing=20
+        )
 
         r = requests.get(API_EVENTOS)
         dados = r.json()
@@ -146,28 +144,30 @@ def main(page: ft.Page):
         for evento in dados["dados"]:
             grid.controls.append(
                 ft.Container(
+                    width=380,
+                    padding=20,
+                    border_radius=20,
                     bgcolor="#1e293b",
-                    padding=15,
-                    border_radius=15,
                     content=ft.Column([
-                        ft.Image(src=evento.get("imagem", ""), height=120),
-                        ft.Text(evento["nome_evento"], weight="bold"),
-                        ft.Text(evento["descricao"], size=12),
-                        ft.Text(f"R$ {float(evento['preco']):.2f}"),
+                        ft.Image(src=evento.get("imagem", ""), height=180, fit=ft.ImageFit.COVER),
+                        ft.Text(evento["nome_evento"], size=20, weight="bold"),
+                        ft.Text(evento["descricao"], size=14),
+                        ft.Text(f"R$ {float(evento['preco']):.2f}", size=18),
 
                         ft.Row([
                             ft.ElevatedButton(
                                 "Ver Evento",
+                                width=180,
+                                height=45,
                                 on_click=lambda e, ev=evento: tela_evento(ev)
                             ),
-
-                            # 🔥 botão excluir por evento
                             ft.IconButton(
                                 icon=ft.icons.DELETE,
                                 visible=usuario_admin,
+                                icon_size=28,
                                 on_click=lambda e, ev=evento: excluir_evento(ev["id"])
                             )
-                        ])
+                        ], alignment="spaceBetween")
                     ])
                 )
             )
@@ -176,15 +176,15 @@ def main(page: ft.Page):
             page.add(
                 ft.Container(
                     content=ft.Column([
-                        ft.Text("🔧 Painel Admin", size=18, weight="bold"),
+                        ft.Text("🔧 Painel Admin", size=22, weight="bold"),
                         ft.Row([
                             ft.ElevatedButton("➕ Criar Evento", on_click=lambda e: tela_criar_evento()),
                             ft.ElevatedButton("🎫 Validar Ingresso", on_click=lambda e: tela_validar())
-                        ])
+                        ], alignment="center")
                     ]),
                     bgcolor=ft.colors.GREY_800,
-                    padding=10,
-                    border_radius=10
+                    padding=15,
+                    border_radius=15
                 )
             )
 
@@ -195,11 +195,11 @@ def main(page: ft.Page):
         page.clean()
         app_bar("Criar Evento")
 
-        nome = ft.TextField(label="Nome")
-        descricao = ft.TextField(label="Descrição")
-        data = ft.TextField(label="Data")
-        preco = ft.TextField(label="Preço")
-        imagem = ft.TextField(label="URL da Imagem")
+        nome = ft.TextField(label="Nome", width=320)
+        descricao = ft.TextField(label="Descrição", width=320)
+        data = ft.TextField(label="Data", width=320)
+        preco = ft.TextField(label="Preço", width=320)
+        imagem = ft.TextField(label="URL da Imagem", width=320)
         msg = ft.Text()
 
         def criar(e):
@@ -218,10 +218,12 @@ def main(page: ft.Page):
             page.update()
 
         page.add(
-            nome, descricao, data, preco, imagem,
-            ft.ElevatedButton("Criar", on_click=criar),
-            msg,
-            ft.TextButton("Voltar", on_click=lambda e: tela_vitrine())
+            ft.Column([
+                nome, descricao, data, preco, imagem,
+                ft.ElevatedButton("Criar", width=220, on_click=criar),
+                msg,
+                ft.TextButton("Voltar", on_click=lambda e: tela_vitrine())
+            ], horizontal_alignment="center")
         )
 
     # -------- EXCLUIR EVENTO --------
@@ -256,7 +258,7 @@ def main(page: ft.Page):
         page.clean()
         app_bar(evento["nome_evento"])
 
-        qtd = ft.TextField(value="1", width=60)
+        qtd = ft.TextField(value="1", width=80)
 
         def add(e):
             carrinho.append({
@@ -269,13 +271,15 @@ def main(page: ft.Page):
             page.update()
 
         page.add(
-            ft.Image(src=evento.get("imagem", ""), height=200),
-            ft.Text(evento["nome_evento"], size=22),
-            ft.Text(evento["descricao"]),
-            ft.Text(f"Preço: R$ {evento['preco']}"),
-            ft.Row([ft.Text("Qtd"), qtd]),
-            ft.ElevatedButton("Adicionar ao Carrinho", on_click=add),
-            ft.TextButton("Voltar", on_click=lambda e: tela_vitrine())
+            ft.Column([
+                ft.Image(src=evento.get("imagem", ""), height=260),
+                ft.Text(evento["nome_evento"], size=24, weight="bold"),
+                ft.Text(evento["descricao"]),
+                ft.Text(f"Preço: R$ {evento['preco']}", size=18),
+                ft.Row([ft.Text("Qtd"), qtd], alignment="center"),
+                ft.ElevatedButton("Adicionar ao Carrinho", width=220, height=45, on_click=add),
+                ft.TextButton("Voltar", on_click=lambda e: tela_vitrine())
+            ], horizontal_alignment="center")
         )
 
     # -------- CARRINHO --------
@@ -404,7 +408,7 @@ def main(page: ft.Page):
             ft.Row([
                 ft.ElevatedButton("Validar", on_click=validar),
                 ft.ElevatedButton("📷 Câmera", on_click=abrir_camera)
-            ]),
+            ]), 
             resultado
         )
 
