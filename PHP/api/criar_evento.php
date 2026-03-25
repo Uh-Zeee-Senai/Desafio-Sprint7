@@ -13,6 +13,7 @@ $nome = $input["nome_evento"] ?? null;
 $descricao = $input["descricao"] ?? null;
 $data = $input["data_evento"] ?? null;
 $preco = $input["preco"] ?? null;
+$imagem = $input["imagem"] ?? $_POST["imagem"] ?? "";
 
 // 🔍 DEBUG (opcional)
 if (!$user_id || !$nome || !$descricao || !$data || !$preco) {
@@ -42,8 +43,8 @@ if (!$user || $user["is_admin"] != 1) {
 
 // 🔥 INSERIR EVENTO
 try {
-    $sql = "INSERT INTO eventos (nome_evento, descricao, data_evento, preco)
-            VALUES (:nome, :descricao, :data, :preco)";
+    $sql = "INSERT INTO eventos (nome_evento, descricao, data_evento, preco, imagem)
+            VALUES (:nome, :descricao, :data, :preco, :imagem)";
 
     $stmt = $conn->prepare($sql);
 
@@ -51,7 +52,8 @@ try {
         ":nome" => $nome,
         ":descricao" => $descricao,
         ":data" => $data,
-        ":preco" => $preco
+        ":preco" => $preco,
+        ":imagem" => $imagem
     ]);
 
     echo json_encode([

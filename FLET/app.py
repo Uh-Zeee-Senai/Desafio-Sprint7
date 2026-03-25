@@ -12,10 +12,12 @@ API_COMPRAR = "http://localhost/Desafio_Sprint/php/api/comprar_ingresso.php"
 API_MEUS_INGRESSOS = "http://localhost/Desafio_Sprint/php/api/meus_ingressos.php"
 API_VALIDAR = "http://localhost/Desafio_Sprint/php/api/validar_ingresso.php"
 API_CRIAR_EVENTO = "http://localhost/Desafio_Sprint/php/api/criar_evento.php"
+API_DELETAR_EVENTO = "http://localhost/Desafio_Sprint/php/api/deletar_evento.php"
 
 usuario_logado = None
 usuario_admin = False
 carrinho = []
+
 
 def main(page: ft.Page):
     global usuario_logado, usuario_admin, carrinho
@@ -23,6 +25,15 @@ def main(page: ft.Page):
     page.title = "Sistema de Eventos"
     page.theme_mode = ft.ThemeMode.DARK
     page.scroll = ft.ScrollMode.AUTO
+
+    page.bgcolor = "#0f172a"
+    page.theme = ft.Theme(
+        color_scheme=ft.ColorScheme(
+            primary="#3b82f6",
+            secondary="#22c55e",
+            background="#0f172a"
+        )
+    )
 
     # -------- APP BAR --------
     def app_bar(titulo):
@@ -135,23 +146,31 @@ def main(page: ft.Page):
         for evento in dados["dados"]:
             grid.controls.append(
                 ft.Container(
-                    bgcolor=ft.colors.GREY_900,
-                    padding=10,
-                    border_radius=10,
+                    bgcolor="#1e293b",
+                    padding=15,
+                    border_radius=15,
                     content=ft.Column([
+                        ft.Image(src=evento.get("imagem", ""), height=120),
                         ft.Text(evento["nome_evento"], weight="bold"),
-                        ft.Text(evento["descricao"], size=10),
+                        ft.Text(evento["descricao"], size=12),
                         ft.Text(f"R$ {float(evento['preco']):.2f}"),
 
-                        ft.ElevatedButton(
-                            "Ver Evento",
-                            on_click=lambda e, ev=evento: tela_evento(ev)
-                        )
+                        ft.Row([
+                            ft.ElevatedButton(
+                                "Ver Evento",
+                                on_click=lambda e, ev=evento: tela_evento(ev)
+                            ),
+
+                            # 🔥 botão excluir por evento
+                            ft.IconButton(
+                                icon=ft.icons.DELETE,
+                                visible=usuario_admin,
+                                on_click=lambda e, ev=evento: excluir_evento(ev["id"])
+                            )
+                        ])
                     ])
                 )
             )
-
-        botoes_admin = []
 
         if usuario_admin:
             page.add(
@@ -169,11 +188,7 @@ def main(page: ft.Page):
                 )
             )
 
-        page.add(
-            grid,
-            ft.Divider(),
-            ft.Row(botoes_admin)
-        )
+        page.add(grid)
 
     # -------- CRIAR EVENTO --------
     def tela_criar_evento():
@@ -182,32 +197,59 @@ def main(page: ft.Page):
 
         nome = ft.TextField(label="Nome")
         descricao = ft.TextField(label="Descrição")
-        data = ft.TextField(label="Data (YYYY-MM-DD)")
+        data = ft.TextField(label="Data")
         preco = ft.TextField(label="Preço")
+        imagem = ft.TextField(label="URL da Imagem")
         msg = ft.Text()
 
         def criar(e):
-            print("ENVIANDO USER:", usuario_logado)
             r = requests.post(API_CRIAR_EVENTO, json={
                 "user_id": usuario_logado,
                 "nome_evento": nome.value,
                 "descricao": descricao.value,
                 "data_evento": data.value,
-                "preco": preco.value
+                "preco": preco.value,
+                "imagem": imagem.value
             })
 
             dados = r.json()
-
             msg.value = dados.get("message", "")
             msg.color = "green" if dados["status"] == "success" else "red"
             page.update()
 
         page.add(
-            nome, descricao, data, preco,
+            nome, descricao, data, preco, imagem,
             ft.ElevatedButton("Criar", on_click=criar),
             msg,
             ft.TextButton("Voltar", on_click=lambda e: tela_vitrine())
         )
+
+    # -------- EXCLUIR EVENTO --------
+    def excluir_evento(evento_id):
+
+        def fechar(e):
+            page.dialog.open = False
+            page.update()
+
+        def confirmar(e):
+            requests.post(API_DELETAR_EVENTO, json={
+                "id": evento_id,
+                "user_id": usuario_logado
+            })
+            page.dialog.open = False
+            tela_vitrine()
+
+        page.dialog = ft.AlertDialog(
+            title=ft.Text("Confirmar"),
+            content=ft.Text("Deseja excluir este evento?"),
+            actions=[
+                ft.TextButton("Cancelar", on_click=fechar),
+                ft.TextButton("Excluir", on_click=confirmar)
+            ]
+        )
+
+        page.dialog.open = True
+        page.update()
 
     # -------- EVENTO --------
     def tela_evento(evento):
@@ -227,6 +269,7 @@ def main(page: ft.Page):
             page.update()
 
         page.add(
+            ft.Image(src=evento.get("imagem", ""), height=200),
             ft.Text(evento["nome_evento"], size=22),
             ft.Text(evento["descricao"]),
             ft.Text(f"Preço: R$ {evento['preco']}"),
@@ -321,77 +364,48 @@ def main(page: ft.Page):
 
             usado = ing.get("usado", 0)
 
-            status_texto = "✅ Usado" if usado == 1 else "❌ Não usado"
-            status_cor = "green" if usado == 1 else "red"
+            status = "✅ Usado" if usado == 1 else "❌ Não usado"
 
             lista.controls.append(
-                ft.Card(
-                    content=ft.Container(
-                        padding=10,
-                        content=ft.Column([
-                            ft.Text(ing["titulo"], weight="bold"),
-                            ft.Text(f"Código: {ing['codigo_compra']}"),
-                            
-                            ft.Text(status_texto, color=status_cor, size=16),
-
-                            ft.Image(src_base64=qr, width=120)
-                        ], horizontal_alignment="center")
-                    )
-                )
+                ft.Column([
+                    ft.Text(ing["titulo"]),
+                    ft.Text(ing["codigo_compra"]),
+                    ft.Text(status),
+                    ft.Image(src_base64=qr, width=120)
+                ])
             )
 
-        page.add(lista, ft.TextButton("Voltar", on_click=lambda e: tela_vitrine()))
+        page.add(lista)
 
     # -------- VALIDAR --------
     def tela_validar():
         page.clean()
         app_bar("Validar")
 
-        campo = ft.TextField(label="QR Code", autofocus=True)
+        campo = ft.TextField(label="QR Code")
         resultado = ft.Text()
 
-        # 🔎 validar manual
         def validar(e):
-            try:
-                r = requests.post(API_VALIDAR, json={
-                    "qr_code": campo.value
-                })
+            r = requests.post(API_VALIDAR, json={
+                "qr_code": campo.value
+            })
 
-                dados = r.json()
+            dados = r.json()
 
-                resultado.value = dados.get("message", "Sem resposta")
-                resultado.color = "green" if dados.get("status") == "success" else "red"
+            resultado.value = dados["message"]
+            resultado.color = "green" if dados["status"] == "success" else "red"
+            page.update()
 
-                campo.value = ""
-                page.update()
-
-            except Exception as erro:
-                resultado.value = str(erro)
-                resultado.color = "red"
-                page.update()
-
-        # 📷 abrir leitor de QR com câmera (HTML externo)
         def abrir_camera(e):
-            import webbrowser
             webbrowser.open("http://localhost/Desafio_Sprint/PHP/assets/scanner.html")
 
-        campo.on_submit = validar
-
         page.add(
-            ft.Text("🎫 Validador de Ingressos", size=20, weight="bold"),
-
             campo,
-
             ft.Row([
-                ft.ElevatedButton("✅ Validar", on_click=validar),
-                ft.ElevatedButton("📷 Ler com câmera", on_click=abrir_camera)
+                ft.ElevatedButton("Validar", on_click=validar),
+                ft.ElevatedButton("📷 Câmera", on_click=abrir_camera)
             ]),
-
-            ft.Divider(),
-
-            resultado,
-
-            ft.TextButton("Voltar", on_click=lambda e: tela_vitrine())
+            resultado
         )
 
     tela_login()
