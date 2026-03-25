@@ -21,21 +21,17 @@ carrinho = []
 def main(page: ft.Page):
     global usuario_logado, usuario_admin, carrinho
 
-    # 🔥 FILE PICKER
-    arquivo = ft.FilePicker()
-    page.overlay.append(arquivo)
-
     imagem_base64 = {"data": None}
 
-    def selecionar_imagem(e):
-        arquivo.pick_files(allow_multiple=False)
-
-    def ao_escolher(e: ft.FilePickerResultEvent):
+    # 🔥 FILE PICKER CORRIGIDO
+    def file_result(e: ft.FilePickerResultEvent):
         if e.files:
-            with open(e.files[0].path, "rb") as f:
+            file = e.files[0]
+            with open(file.path, "rb") as f:
                 imagem_base64["data"] = base64.b64encode(f.read()).decode()
 
-    arquivo.on_result = ao_escolher
+    arquivo = ft.FilePicker(on_result=file_result)
+    page.overlay.append(arquivo)
 
     page.title = "Sistema de Eventos"
     page.theme_mode = ft.ThemeMode.DARK
@@ -74,18 +70,16 @@ def main(page: ft.Page):
         page.clean()
         app_bar("Login")
 
-        email = ft.TextField(label="Email", width=320)
-        senha = ft.TextField(label="Senha", password=True, width=320)
+        email = ft.TextField(label="Email", width=300)
+        senha = ft.TextField(label="Senha", password=True, width=300)
         msg = ft.Text()
 
         def login(e):
             global usuario_logado, usuario_admin
-
             r = requests.post(API_LOGIN, json={
                 "email": email.value,
                 "senha": senha.value
             })
-
             dados = r.json()
 
             if dados["status"] == "success":
@@ -97,21 +91,25 @@ def main(page: ft.Page):
                 msg.color = "red"
                 page.update()
 
-        page.add(ft.Column([
-            email, senha,
-            ft.ElevatedButton("Entrar", on_click=login),
-            ft.TextButton("Criar conta", on_click=lambda e: tela_cadastro()),
-            msg
-        ], horizontal_alignment="center"))
+        page.add(
+            ft.Container(
+                alignment=ft.alignment.center,
+                content=ft.Column(
+                    [email, senha, ft.ElevatedButton("Entrar", on_click=login),
+                     ft.TextButton("Criar conta", on_click=lambda e: tela_cadastro()), msg],
+                    horizontal_alignment="center"
+                )
+            )
+        )
 
     # -------- CADASTRO --------
     def tela_cadastro():
         page.clean()
         app_bar("Cadastro")
 
-        nome = ft.TextField(label="Nome", width=320)
-        email = ft.TextField(label="Email", width=320)
-        senha = ft.TextField(label="Senha", password=True, width=320)
+        nome = ft.TextField(label="Nome")
+        email = ft.TextField(label="Email")
+        senha = ft.TextField(label="Senha", password=True)
         msg = ft.Text()
 
         def cadastrar(e):
@@ -120,47 +118,46 @@ def main(page: ft.Page):
                 "email": email.value,
                 "senha": senha.value
             })
-
             dados = r.json()
             msg.value = dados["message"]
             msg.color = "green" if dados["status"] == "success" else "red"
             page.update()
 
-        page.add(ft.Column([
-            nome, email, senha,
-            ft.ElevatedButton("Cadastrar", on_click=cadastrar),
-            ft.TextButton("Voltar", on_click=lambda e: tela_login()),
-            msg
-        ], horizontal_alignment="center"))
+        page.add(nome, email, senha,
+                 ft.ElevatedButton("Cadastrar", on_click=cadastrar),
+                 ft.TextButton("Voltar", on_click=lambda e: tela_login()),
+                 msg)
 
     # -------- VITRINE --------
     def tela_vitrine():
         page.clean()
         app_bar("Eventos")
 
-        grid = ft.GridView(expand=True, max_extent=420, spacing=20)
+        grid = ft.GridView(expand=True, max_extent=400)
 
         r = requests.get(API_EVENTOS)
         dados = r.json()
 
         for evento in dados["dados"]:
+            img = evento.get("imagem")
+
+            if img and not img.startswith("http"):
+                img = f"data:image/jpeg;base64,{img}"
+
             grid.controls.append(
                 ft.Container(
                     padding=15,
-                    border_radius=15,
                     bgcolor="#1e293b",
+                    border_radius=15,
                     content=ft.Column([
-                        ft.Image(
-                            src=evento.get("imagem") if evento.get("imagem") else "https://via.placeholder.com/300x200",
-                            height=180,
-                            fit=ft.ImageFit.COVER
-                        ),
+                        ft.Image(src=img if img else "https://via.placeholder.com/300", height=180),
                         ft.Text(evento["nome_evento"], weight="bold"),
                         ft.Text(evento["descricao"]),
-                        ft.Text(f"R$ {float(evento['preco']):.2f}"),
+                        ft.Text(f"R$ {evento['preco']}"),
 
                         ft.Row([
-                            ft.ElevatedButton("Ver Evento", on_click=lambda e, ev=evento: tela_evento(ev)),
+                            ft.ElevatedButton("Ver Evento",
+                                on_click=lambda e, ev=evento: tela_evento(ev)),
                             ft.IconButton(
                                 icon=ft.icons.DELETE,
                                 visible=usuario_admin,
@@ -196,13 +193,54 @@ def main(page: ft.Page):
 
             dados = r.json()
             msg.value = dados.get("message", "")
+            msg.color = "green" if dados["status"] == "success" else "red"
             page.update()
 
         page.add(
             nome, descricao, data, preco,
-            ft.ElevatedButton("Selecionar Imagem", on_click=selecionar_imagem),
+            ft.ElevatedButton("Selecionar Imagem", on_click=lambda e: arquivo.pick_files()),
             ft.ElevatedButton("Criar", on_click=criar),
             msg,
+            ft.TextButton("Voltar", on_click=lambda e: tela_vitrine())
+        )
+
+    # -------- EXCLUIR EVENTO --------
+    def excluir_evento(evento_id):
+        def confirmar(e):
+            requests.post(API_DELETAR_EVENTO, json={"id": evento_id})
+            tela_vitrine()
+
+        page.dialog = ft.AlertDialog(
+            title=ft.Text("Confirmar"),
+            content=ft.Text("Excluir evento?"),
+            actions=[
+                ft.TextButton("Cancelar", on_click=lambda e: setattr(page.dialog, "open", False)),
+                ft.TextButton("Excluir", on_click=confirmar)
+            ]
+        )
+        page.dialog.open = True
+        page.update()
+
+    # -------- EVENTO --------
+    def tela_evento(evento):
+        page.clean()
+        app_bar(evento["nome_evento"])
+
+        qtd = ft.TextField(value="1", width=80)
+
+        def add(e):
+            carrinho.append({"evento": evento, "quantidade": int(qtd.value)})
+            page.snack_bar = ft.SnackBar(ft.Text("Adicionado"))
+            page.snack_bar.open = True
+            page.update()
+
+        page.add(
+            ft.Image(height=250),
+            ft.Text(evento["nome_evento"]),
+            ft.Text(evento["descricao"]),
+            ft.Text(f"R$ {evento['preco']}"),
+            ft.Row([ft.Text("Qtd"), qtd]),
+            ft.ElevatedButton("Adicionar", on_click=add),
             ft.TextButton("Voltar", on_click=lambda e: tela_vitrine())
         )
 
@@ -214,98 +252,27 @@ def main(page: ft.Page):
         lista = ft.Column()
         total = 0
 
-        def remover_item(index):
-            carrinho.pop(index)
-            tela_carrinho()
-
-        def limpar():
-            carrinho.clear()
-            tela_carrinho()
-
         for i, item in enumerate(carrinho):
             ev = item["evento"]
             qtd = item["quantidade"]
-            total += float(ev["preco"]) * qtd
+            subtotal = float(ev["preco"]) * qtd
+            total += subtotal
+
+            def remover(e, index=i):
+                carrinho.pop(index)
+                tela_carrinho()
 
             lista.controls.append(
                 ft.Row([
                     ft.Text(f"{ev['nome_evento']} x{qtd}"),
-                    ft.IconButton(icon=ft.icons.DELETE, on_click=lambda e, idx=i: remover_item(idx))
+                    ft.IconButton(icon=ft.icons.DELETE, on_click=remover)
                 ])
             )
 
-        page.add(
-            lista,
-            ft.Text(f"Total: R$ {total:.2f}"),
-            ft.ElevatedButton("Finalizar", on_click=lambda e: tela_pagamento(total)),
-            ft.TextButton("Limpar Carrinho", on_click=limpar),
-            ft.TextButton("Voltar", on_click=lambda e: tela_vitrine())
-        )
+        page.add(lista,
+                 ft.Text(f"Total: R$ {total:.2f}"),
+                 ft.TextButton("Voltar", on_click=lambda e: tela_vitrine()))
 
-    # -------- RESTO IGUAL (mantido) --------
-    def tela_pagamento(total):
-        page.clean()
-        app_bar("Pagamento")
-        metodo = ft.RadioGroup(content=ft.Column([
-            ft.Radio(value="cartao", label="Cartão"),
-            ft.Radio(value="pix", label="Pix")
-        ]))
-        resultado = ft.Text()
-
-        def pagar(e):
-            carrinho.clear()
-            resultado.value = "Compra concluída"
-            page.update()
-
-        page.add(metodo, ft.ElevatedButton("Pagar", on_click=pagar), resultado)
-        
-    # -------- PAGAMENTO --------
-    def tela_pagamento(total):
-        page.clean()
-        app_bar("Pagamento")
-
-        metodo = ft.RadioGroup(
-            content=ft.Column([
-                ft.Radio(value="cartao", label="Cartão"),
-                ft.Radio(value="pix", label="Pix"),
-                ft.Radio(value="boleto", label="Boleto"),
-                ft.Radio(value="dinheiro", label="Dinheiro"),
-            ])
-        )
-
-        resultado = ft.Text()
-
-        def pagar(e):
-            codigos = []
-
-            for item in carrinho:
-                for _ in range(item["quantidade"]):
-                    r = requests.post(API_COMPRAR, json={
-                        "user_id": usuario_logado,
-                        "evento_id": item["evento"]["id"],
-                        "pagamento": metodo.value
-                    })
-
-                    dados = r.json()
-
-                    if dados.get("status") == "success":
-                        codigos.append(dados.get("codigo", "sem código"))
-                    else:
-                        codigos.append("erro")
-
-            carrinho.clear()
-
-            resultado.value = "Compra concluída:\n" + "\n".join(codigos)
-            resultado.color = "green"
-            page.update()
-
-        page.add(
-            ft.Text(f"Total: R$ {total:.2f}"),
-            metodo,
-            ft.ElevatedButton("Pagar", on_click=pagar),
-            resultado,
-            ft.ElevatedButton("Ver Ingressos", on_click=lambda e: tela_wallet())
-        )
 
     # -------- WALLET --------
     def tela_wallet():
