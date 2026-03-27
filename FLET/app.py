@@ -224,6 +224,10 @@ def main(page: ft.Page):
     # -------- CRIAR EVENTO --------
     def tela_criar_evento():
         page.clean()
+
+        imagem_base64["data"] = None
+        print(imagem_base64["data"][:50] if imagem_base64["data"] else "SEM IMAGEM")
+
         app_bar("Criar Evento")
 
         nome = ft.TextField(label="Nome")
