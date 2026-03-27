@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3308
--- Generation Time: Mar 27, 2026 at 02:00 PM
+-- Generation Time: Mar 27, 2026 at 02:28 PM
 -- Server version: 8.4.3
 -- PHP Version: 8.3.30
 
@@ -46,6 +46,56 @@ INSERT INTO `eventos` (`id`, `nome_evento`, `descricao`, `data_evento`, `preco`,
 (3, 'Festival Gamer', 'Jogos e competições', '2026-07-20', 70.00, NULL),
 (7, 'Cinema', 'Assistir Miranha 4', '2026-08-30', 30.00, NULL);
 
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `ingressos`
+--
+
+CREATE TABLE `ingressos` (
+  `id` int NOT NULL,
+  `id_usuario` int NOT NULL,
+  `id_evento` int NOT NULL,
+  `data_compra` datetime DEFAULT CURRENT_TIMESTAMP,
+  `qr_code` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `usado` tinyint(1) DEFAULT '0',
+  `codigo_compra` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `status` varchar(50) COLLATE utf8mb4_general_ci DEFAULT 'valido',
+  `pagamento` varchar(50) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `valor` decimal(10,2) DEFAULT NULL,
+  `data_validacao` datetime DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `ingressos`
+--
+
+INSERT INTO `ingressos` (`id`, `id_usuario`, `id_evento`, `data_compra`, `qr_code`, `usado`, `codigo_compra`, `status`, `pagamento`, `valor`, `data_validacao`) VALUES
+(46, 7, 3, '2026-03-25 14:45:43', 'ING_69c41f471a762|3', 0, 'ING_69c41f471a762', 'valido', 'pix', 70.00, NULL),
+(47, 7, 1, '2026-03-25 16:14:48', 'ING_69c43428d1f19|1', 0, 'ING_69c43428d1f19', 'valido', 'pix', 50.00, NULL),
+(48, 7, 1, '2026-03-27 09:33:05', 'ING_69c6790125805|1', 0, 'ING_69c6790125805', 'valido', 'boleto', 50.00, NULL);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `usuarios`
+--
+
+CREATE TABLE `usuarios` (
+  `id_usuario` int NOT NULL,
+  `nome` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
+  `email` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
+  `senha` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
+  `is_admin` tinyint(1) DEFAULT '0'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `usuarios`
+--
+
+INSERT INTO `usuarios` (`id_usuario`, `nome`, `email`, `senha`, `is_admin`) VALUES
+(7, 'adm', 'adm', '$2y$10$J4pJa2oG.VQXvif7VewsoOFfFhrAcheVSqDchTK2ferDmDKuvlZ2K', 1);
+
 --
 -- Indexes for dumped tables
 --
@@ -57,6 +107,21 @@ ALTER TABLE `eventos`
   ADD PRIMARY KEY (`id`);
 
 --
+-- Indexes for table `ingressos`
+--
+ALTER TABLE `ingressos`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `id_usuario` (`id_usuario`),
+  ADD KEY `id_evento` (`id_evento`);
+
+--
+-- Indexes for table `usuarios`
+--
+ALTER TABLE `usuarios`
+  ADD PRIMARY KEY (`id_usuario`),
+  ADD UNIQUE KEY `email` (`email`);
+
+--
 -- AUTO_INCREMENT for dumped tables
 --
 
@@ -65,6 +130,29 @@ ALTER TABLE `eventos`
 --
 ALTER TABLE `eventos`
   MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
+
+--
+-- AUTO_INCREMENT for table `ingressos`
+--
+ALTER TABLE `ingressos`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=49;
+
+--
+-- AUTO_INCREMENT for table `usuarios`
+--
+ALTER TABLE `usuarios`
+  MODIFY `id_usuario` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
+
+--
+-- Constraints for dumped tables
+--
+
+--
+-- Constraints for table `ingressos`
+--
+ALTER TABLE `ingressos`
+  ADD CONSTRAINT `ingressos_ibfk_1` FOREIGN KEY (`id_usuario`) REFERENCES `usuarios` (`id_usuario`) ON DELETE CASCADE,
+  ADD CONSTRAINT `ingressos_ibfk_2` FOREIGN KEY (`id_evento`) REFERENCES `eventos` (`id`) ON DELETE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

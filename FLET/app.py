@@ -14,6 +14,8 @@ API_VALIDAR = "http://localhost/Desafio_Sprint/php/api/validar_ingresso.php"
 API_CRIAR_EVENTO = "http://localhost/Desafio_Sprint/php/api/criar_evento.php"
 API_EDITAR_EVENTO = "http://localhost/Desafio_Sprint/php/api/editar_evento.php"
 API_DELETAR_EVENTO = "http://localhost/Desafio_Sprint/php/api/deletar_evento.php"
+API_FEEDBACK_IMAGEM = "http://localhost/Desafio_Sprint/php/api/feedback_imagem.php"
+UPLOAD_HTML = "http://localhost/Desafio_Sprint/php/assets/upload.html"
 
 
 usuario_logado = None
@@ -23,7 +25,7 @@ carrinho = []
 def main(page: ft.Page):
     global usuario_logado, usuario_admin, carrinho
 
-    imagem_base64 = {"data": None}
+    imagem_url = {"data": None}
     def tratar_imagem(img):
         if not img:
             return "https://via.placeholder.com/400x250", None
@@ -32,30 +34,18 @@ def main(page: ft.Page):
         if img.startswith("http"):
             return img, None
 
-        # 🔥 BASE64 (verifica tamanho mínimo)
-        if len(img) > 100:
+        if isinstance(img, str) and img.startswith("http"):
             return None, img
 
         # 🔥 NOME DE ARQUIVO (tipo "Skillet.jpg")
         return "https://via.placeholder.com/400x250", None
-
-    # 🔥 FILE PICKER CORRIGIDO
-    def file_result(e: ft.FilePickerResultEvent):
-        if e.files:
-            file = e.files[0]
-
-            if file.bytes:
-                imagem_base64["data"] = base64.b64encode(file.bytes).decode()
-
-    arquivo = ft.FilePicker(on_result=file_result)
-    page.overlay.append(arquivo)
 
     page.title = "Sistema de Eventos"
     page.theme_mode = ft.ThemeMode.DARK
     page.scroll = ft.ScrollMode.AUTO
     page.bgcolor = "#0f172a"
 
-    # -------- APP BAR --------
+    # -------- APP BAR -------------------------------------------------------------------------------------------
     def app_bar(titulo):
         page.appbar = ft.AppBar(
             title=ft.Text(titulo, size=20, weight="bold"),
@@ -75,14 +65,14 @@ def main(page: ft.Page):
         carrinho.clear()
         tela_login()
 
-    # -------- QR --------
+    # -------- QR CODE ----------------------------------------------------------------------------------------
     def gerar_qr(texto):
         qr = qrcode.make(texto)
         buffer = BytesIO()
         qr.save(buffer)
         return base64.b64encode(buffer.getvalue()).decode()
 
-    # -------- LOGIN --------
+    # -------- LOGIN ---------------------------------------------------------------------------------------
     def tela_login():
         page.clean()
         app_bar("Login")
@@ -119,7 +109,7 @@ def main(page: ft.Page):
             )
         )
 
-    # -------- CADASTRO --------
+    # -------- CADASTRO -----------------------------------------------------------------------------------
     def tela_cadastro():
         page.clean()
         app_bar("Cadastro")
@@ -145,7 +135,7 @@ def main(page: ft.Page):
                  ft.TextButton("Voltar", on_click=lambda e: tela_login()),
                  msg)
 
-# -------- VITRINE --------
+# -------- VITRINE -----------------------------------------------------------------------------------
     def tela_vitrine():
         page.clean()
         app_bar("Eventos")
@@ -220,13 +210,34 @@ def main(page: ft.Page):
 
         page.add(grid)
 
+# -------- UPLOAD IMAGEM ---------------------------------------------------------------------------
+    def abrir_upload():
+        webbrowser.open(UPLOAD_HTML)
 
-    # -------- CRIAR EVENTO --------
+    def confirmar_upload(msg):
+        try:
+            r = requests.get(API_FEEDBACK_IMAGEM)
+            dados = r.json()
+
+            if dados["status"] == "success":
+                imagem_url["data"] = dados["url"]
+                msg.value = "Imagem carregada com sucesso!"
+                msg.color = "green"
+            else:
+                msg.value = dados["message"]
+                msg.color = "red"
+
+        except:
+            msg.value = "Erro ao conectar com servidor"
+            msg.color = "red"
+
+        page.update()
+
+# -------- CRIAR EVENTO ---------------------------------------------------------------------------
     def tela_criar_evento():
         page.clean()
 
-        imagem_base64["data"] = None
-        print(imagem_base64["data"][:50] if imagem_base64["data"] else "SEM IMAGEM")
+        imagem_url["data"] = None
 
         app_bar("Criar Evento")
 
@@ -243,7 +254,7 @@ def main(page: ft.Page):
                 "descricao": descricao.value,
                 "data_evento": data.value,
                 "preco": preco.value,
-                "imagem": imagem_base64["data"]
+                "imagem": imagem_url["data"]
             })
 
             dados = r.json()
@@ -253,15 +264,16 @@ def main(page: ft.Page):
 
         page.add(
             nome, descricao, data, preco,
-            ft.ElevatedButton("Selecionar Imagem", on_click=lambda e: arquivo.pick_files()),
+            ft.ElevatedButton("Selecionar Imagem", on_click=lambda e: abrir_upload()),
+            ft.ElevatedButton("Confirmar Upload", on_click=lambda e: confirmar_upload(msg)),
             ft.ElevatedButton("Criar", on_click=criar),
             msg,
             ft.TextButton("Voltar", on_click=lambda e: tela_vitrine())
         )
 
-    # -------- EDITAR EVENTO --------
+    # -------- EDITAR EVENTO -----------------------------------------------------------------------
     def tela_editar_evento(evento):
-        imagem_base64["data"] = None
+        imagem_url["data"] = None
         page.clean()
         app_bar("Editar Evento")
 
@@ -278,7 +290,7 @@ def main(page: ft.Page):
                 "descricao": descricao.value,
                 "data_evento": data.value,
                 "preco": preco.value,
-                "imagem": imagem_base64["data"]  # opcional trocar imagem
+                "imagem": imagem_url["data"]  # opcional trocar imagem
             })
 
             dados = r.json()
@@ -288,12 +300,13 @@ def main(page: ft.Page):
 
         page.add(
             nome, descricao, data, preco,
-            ft.ElevatedButton("Trocar Imagem", on_click=lambda e: arquivo.pick_files()),
+            ft.ElevatedButton("Selecionar Imagem", on_click=lambda e: abrir_upload()),
+            ft.ElevatedButton("Confirmar Upload", on_click=lambda e: confirmar_upload(msg)),
             ft.ElevatedButton("Salvar", on_click=salvar),
             msg,
             ft.TextButton("Voltar", on_click=lambda e: tela_vitrine())
         )
-    # -------- EXCLUIR EVENTO --------
+    # -------- EXCLUIR EVENTO -----------------------------------------------------------------------------
     def excluir_evento(evento_id):
 
         def fechar(e):
@@ -319,7 +332,7 @@ def main(page: ft.Page):
         page.update()
 
 
-    # -------- EVENTO --------
+    # -------- EVENTO ---------------------------------------------------------------------------------
     def tela_evento(evento):
         page.clean()
         app_bar(evento["nome_evento"])
@@ -357,7 +370,7 @@ def main(page: ft.Page):
         )
 
 
-    # -------- CARRINHO --------
+    # -------- CARRINHO -------------------------------------------------------------------------------
     def tela_carrinho():
         page.clean()
         app_bar("Carrinho")
@@ -443,7 +456,7 @@ def main(page: ft.Page):
             ft.ElevatedButton("Ver Ingressos", on_click=lambda e: tela_wallet())
         )
 
-    # -------- WALLET --------
+    # -------- WALLET ------------------------------------------------------------------------------------
     def tela_wallet():
         page.clean()
         app_bar("Ingressos")
@@ -476,7 +489,7 @@ def main(page: ft.Page):
 
         page.add(lista)
 
-    # -------- VALIDAR --------
+    # -------- VALIDAR -----------------------------------------------------------------------------
     def tela_validar():
         page.clean()
         app_bar("Validar")
