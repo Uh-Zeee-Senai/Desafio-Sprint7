@@ -13,7 +13,7 @@ $nome = $input["nome_evento"] ?? null;
 $descricao = $input["descricao"] ?? null;
 $data = $input["data_evento"] ?? null;
 $preco = $input["preco"] ?? null;
-$imagem_base64 = $input["imagem"] ?? "";
+$imagem = $input["imagem"] ?? "";
 
 // 🔍 VALIDAÇÃO
 if (!$user_id || !$nome || !$descricao || !$data || !$preco) {
@@ -39,25 +39,8 @@ if (!$user || $user["is_admin"] != 1) {
     exit;
 }
 
-// 🔥 SALVAR IMAGEM (SE EXISTIR)
-$url_imagem = null;
-
-if (!empty($imagem_base64)) {
-
-    // cria pasta uploads se não existir
-    $pasta = "../uploads/";
-    if (!file_exists($pasta)) {
-        mkdir($pasta, 0777, true);
-    }
-
-    $nome_arquivo = uniqid() . ".jpg";
-    $caminho = $pasta . $nome_arquivo;
-
-    file_put_contents($caminho, base64_decode($imagem_base64));
-
-    // ⚠️ MUDA ISSO QUANDO FOR PUBLICAR
-    $url_imagem = "http://localhost/Desafio_Sprint/php/uploads/" . $nome_arquivo;
-}
+// SALVAMENTO DE IMAGEM 
+$url_imagem = !empty($imagem) ? $imagem : null;
 
 // 🔥 INSERIR EVENTO
 try {

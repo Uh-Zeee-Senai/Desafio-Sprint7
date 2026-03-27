@@ -37,7 +37,6 @@ def main(page: ft.Page):
         if isinstance(img, str) and img.startswith("http"):
             return None, img
 
-        # 🔥 NOME DE ARQUIVO (tipo "Skillet.jpg")
         return "https://via.placeholder.com/400x250", None
 
     page.title = "Sistema de Eventos"

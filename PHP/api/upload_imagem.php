@@ -4,7 +4,7 @@ session_start();
 
 if(isset($_FILES["imagem"])){
 
-    $pasta = "../uploads/";
+    $pasta = "../Uploads/";
 
     if(!is_dir($pasta)){
         mkdir($pasta, 0777, true);
@@ -15,7 +15,7 @@ if(isset($_FILES["imagem"])){
 
     if(move_uploaded_file($_FILES["imagem"]["tmp_name"], $caminho)){
 
-        $url = "http://localhost/Desafio_Sprint/php/uploads/" . $nome;
+        $url = "http://localhost/Desafio_Sprint/Uploads/" . $nome;
 
         $_SESSION["ultima_imagem"] = $url;
 

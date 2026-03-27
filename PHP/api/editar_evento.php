@@ -8,11 +8,15 @@ $id = $data["id"] ?? null;
 $nome = $data["nome_evento"] ?? "";
 $descricao = $data["descricao"] ?? "";
 $data_evento = $data["data_evento"] ?? "";
-$preco = $data["preco"] ?? 0;
+$preco = floatval($data["preco"] ?? 0);
 $imagem = $data["imagem"] ?? null;
 
-if (!$id) {
-    echo json_encode(["status" => "error", "message" => "ID obrigatório"]);
+// validação
+if (!$id || !$nome || !$descricao || !$data_evento || !$preco) {
+    echo json_encode([
+        "status" => "error",
+        "message" => "Dados incompletos"
+    ]);
     exit;
 }
 
@@ -21,8 +25,7 @@ $conn = $database->getConnection();
 
 try {
 
-    // 🔥 Se NÃO enviou imagem → NÃO altera imagem
-    if (!empty($data->imagem)) {
+    if (!empty($imagem)) {
         $sql = "UPDATE eventos 
                 SET nome_evento=?, descricao=?, data_evento=?, preco=?, imagem=? 
                 WHERE id=?";
@@ -46,4 +49,4 @@ try {
         "status" => "error",
         "message" => $e->getMessage()
     ]);
-}   
+}
