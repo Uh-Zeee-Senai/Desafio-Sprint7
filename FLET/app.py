@@ -30,11 +30,12 @@ def main(page: ft.Page):
         if not img:
             return "https://via.placeholder.com/400x250", None
 
-        # 🔥 URL
-        if img.startswith("http"):
+        # 🔥 Se for URL
+        if isinstance(img, str) and img.startswith("http"):
             return img, None
 
-        if isinstance(img, str) and img.startswith("http"):
+        # 🔥 Se for base64 (caso futuro)
+        if isinstance(img, str) and len(img) > 100:
             return None, img
 
         return "https://via.placeholder.com/400x250", None

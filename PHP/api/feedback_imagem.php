@@ -18,7 +18,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         if (move_uploaded_file($_FILES["imagem"]["tmp_name"], $caminho)) {
 
-            $url = "http://localhost/Desafio_Sprint/Uploads/" . $nome;
+            $url = "http://localhost/Desafio_Sprint/PHP/Uploads/" . $nome;
 
             // 🔥 SALVA A URL
             file_put_contents($arquivo_temp, $url);
