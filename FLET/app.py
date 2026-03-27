@@ -12,7 +12,9 @@ API_COMPRAR = "http://localhost/Desafio_Sprint/php/api/comprar_ingresso.php"
 API_MEUS_INGRESSOS = "http://localhost/Desafio_Sprint/php/api/meus_ingressos.php"
 API_VALIDAR = "http://localhost/Desafio_Sprint/php/api/validar_ingresso.php"
 API_CRIAR_EVENTO = "http://localhost/Desafio_Sprint/php/api/criar_evento.php"
+API_EDITAR_EVENTO = "http://localhost/Desafio_Sprint/php/api/editar_evento.php"
 API_DELETAR_EVENTO = "http://localhost/Desafio_Sprint/php/api/deletar_evento.php"
+
 
 usuario_logado = None
 usuario_admin = False
@@ -41,8 +43,9 @@ def main(page: ft.Page):
     def file_result(e: ft.FilePickerResultEvent):
         if e.files:
             file = e.files[0]
-            with open(file.path, "rb") as f:
-                imagem_base64["data"] = base64.b64encode(f.read()).decode()
+
+            if file.bytes:
+                imagem_base64["data"] = base64.b64encode(file.bytes).decode()
 
     arquivo = ft.FilePicker(on_result=file_result)
     page.overlay.append(arquivo)
@@ -185,6 +188,11 @@ def main(page: ft.Page):
                                 on_click=lambda e, ev=evento: tela_evento(ev)
                             ),
                             ft.IconButton(
+                                icon=ft.icons.EDIT,
+                                visible=usuario_admin,
+                                on_click=lambda e, ev=evento: tela_editar_evento(ev)
+                            ),
+                            ft.IconButton(
                                 icon=ft.icons.DELETE,
                                 visible=usuario_admin,
                                 on_click=lambda e, ev=evento: excluir_evento(ev["id"])
@@ -247,7 +255,40 @@ def main(page: ft.Page):
             ft.TextButton("Voltar", on_click=lambda e: tela_vitrine())
         )
 
+    # -------- EDITAR EVENTO --------
+    def tela_editar_evento(evento):
+        imagem_base64["data"] = None
+        page.clean()
+        app_bar("Editar Evento")
 
+        nome = ft.TextField(label="Nome", value=evento["nome_evento"])
+        descricao = ft.TextField(label="Descrição", value=evento["descricao"])
+        data = ft.TextField(label="Data", value=evento.get("data_evento", ""))
+        preco = ft.TextField(label="Preço", value=str(evento["preco"]))
+        msg = ft.Text()
+
+        def salvar(e):
+            r = requests.post("http://localhost/Desafio_Sprint/php/api/editar_evento.php", json={
+                "id": evento["id"],
+                "nome_evento": nome.value,
+                "descricao": descricao.value,
+                "data_evento": data.value,
+                "preco": preco.value,
+                "imagem": imagem_base64["data"]  # opcional trocar imagem
+            })
+
+            dados = r.json()
+            msg.value = dados.get("message", "")
+            msg.color = "green" if dados["status"] == "success" else "red"
+            page.update()
+
+        page.add(
+            nome, descricao, data, preco,
+            ft.ElevatedButton("Trocar Imagem", on_click=lambda e: arquivo.pick_files()),
+            ft.ElevatedButton("Salvar", on_click=salvar),
+            msg,
+            ft.TextButton("Voltar", on_click=lambda e: tela_vitrine())
+        )
     # -------- EXCLUIR EVENTO --------
     def excluir_evento(evento_id):
 
@@ -300,6 +341,7 @@ def main(page: ft.Page):
                 src=src,
                 src_base64=b64,
                 height=250,
+                width=400,
                 fit=ft.ImageFit.COVER
             ),
             ft.Text(evento["nome_evento"], size=22, weight="bold"),
