@@ -20,7 +20,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
             $url = "http://localhost/Desafio_Sprint/PHP/Uploads/" . $nome;
 
-            // 🔥 SALVA A URL
             file_put_contents($arquivo_temp, $url);
 
             echo json_encode([
@@ -36,7 +35,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     }
 
 } else {
-    // 🔥 GET → retorna última imagem salva
     if (file_exists($arquivo_temp)) {
         $url = file_get_contents($arquivo_temp);
 

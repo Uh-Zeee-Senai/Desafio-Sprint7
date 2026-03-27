@@ -77,16 +77,33 @@ def main(page: ft.Page):
         page.clean()
         app_bar("Login")
 
-        email = ft.TextField(label="Email", width=300)
-        senha = ft.TextField(label="Senha", password=True, width=300)
+        print("LOGIN REMASTERIZADO")
+
+        email = ft.TextField(
+            label="Email",
+            width=350,
+            border_radius=10,
+            filled=True
+        )
+
+        senha = ft.TextField(
+            label="Senha",
+            password=True,
+            width=350,
+            border_radius=10,
+            filled=True
+        )
+
         msg = ft.Text()
 
         def login(e):
             global usuario_logado, usuario_admin
+
             r = requests.post(API_LOGIN, json={
                 "email": email.value,
                 "senha": senha.value
             })
+
             dados = r.json()
 
             if dados["status"] == "success":
@@ -99,13 +116,57 @@ def main(page: ft.Page):
                 page.update()
 
         page.add(
-            ft.Container(
-                alignment=ft.alignment.center,
-                content=ft.Column(
-                    [email, senha, ft.ElevatedButton("Entrar", on_click=login),
-                     ft.TextButton("Criar conta", on_click=lambda e: tela_cadastro()), msg],
-                    horizontal_alignment="center"
-                )
+            ft.Row(
+                alignment="center",
+                vertical_alignment="center",
+                expand=True,
+                controls=[
+                    ft.Container(
+                        width=420,
+                        padding=30,
+                        bgcolor="#1e293b",
+                        border_radius=20,
+                        shadow=[
+                            ft.BoxShadow(
+                                blur_radius=20,
+                                color=ft.colors.BLACK54,
+                                offset=ft.Offset(0, 5)
+                            )
+                        ],
+                        content=ft.Column(
+                            [
+                                ft.Text("🎟 Sistema de Eventos",
+                                        size=26,
+                                        weight="bold",
+                                        text_align=ft.TextAlign.CENTER),
+
+                                ft.Text("Faça login para continuar",
+                                        size=14,
+                                        color="gray",
+                                        text_align=ft.TextAlign.CENTER),
+
+                                email,
+                                senha,
+
+                                ft.ElevatedButton(
+                                    "Entrar",
+                                    width=350,
+                                    height=45,
+                                    on_click=login
+                                ),
+
+                                ft.TextButton(
+                                    "Criar conta",
+                                    on_click=lambda e: tela_cadastro()
+                                ),
+
+                                msg
+                            ],
+                            horizontal_alignment="center",
+                            spacing=15
+                        )
+                    )
+                ]
             )
         )
 
@@ -114,9 +175,10 @@ def main(page: ft.Page):
         page.clean()
         app_bar("Cadastro")
 
-        nome = ft.TextField(label="Nome")
-        email = ft.TextField(label="Email")
-        senha = ft.TextField(label="Senha", password=True)
+        nome = ft.TextField(label="Nome", width=350, border_radius=10, filled=True)
+        email = ft.TextField(label="Email", width=350, border_radius=10, filled=True)
+        senha = ft.TextField(label="Senha", password=True, width=350, border_radius=10, filled=True)
+
         msg = ft.Text()
 
         def cadastrar(e):
@@ -125,15 +187,57 @@ def main(page: ft.Page):
                 "email": email.value,
                 "senha": senha.value
             })
+
             dados = r.json()
             msg.value = dados["message"]
             msg.color = "green" if dados["status"] == "success" else "red"
             page.update()
 
-        page.add(nome, email, senha,
-                 ft.ElevatedButton("Cadastrar", on_click=cadastrar),
-                 ft.TextButton("Voltar", on_click=lambda e: tela_login()),
-                 msg)
+        page.add(
+            ft.Container(
+                expand=True,
+                alignment=ft.alignment.center,
+                content=ft.Container(
+                    width=420,
+                    padding=30,
+                    bgcolor="#1e293b",
+                    border_radius=20,
+                    shadow=ft.BoxShadow(
+                            blur_radius=20,
+                            color=ft.colors.BLACK54,
+                            offset=ft.Offset(0, 5)
+                        ),
+                    content=ft.Column(
+                        [
+                            ft.Text("📝 Criar Conta",
+                                    size=26,
+                                    weight="bold",
+                                    text_align=ft.TextAlign.CENTER),
+
+                            nome,
+                            email,
+                            senha,
+
+                            ft.ElevatedButton(
+                                "Cadastrar",
+                                width=350,
+                                height=45,
+                                on_click=cadastrar
+                            ),
+
+                            ft.TextButton(
+                                "Voltar",
+                                on_click=lambda e: tela_login()
+                            ),
+
+                            msg
+                        ],
+                        horizontal_alignment="center",
+                        spacing=15
+                    )
+                )
+            )
+        )
 
 # -------- VITRINE -----------------------------------------------------------------------------------
     def tela_vitrine():

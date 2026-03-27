@@ -4,7 +4,6 @@ require_once "../config/database.php";
 
 $conn = Database::getConnection();
 
-// 🔥 RECEBER JSON
 $input = json_decode(file_get_contents("php://input"), true);
 $qr_code = $input["qr_code"] ?? null;
 
@@ -16,7 +15,6 @@ if (!$qr_code) {
     exit;
 }
 
-// 🔍 BUSCAR INGRESSO
 $sql = "SELECT * FROM ingressos WHERE qr_code = :qr";
 $stmt = $conn->prepare($sql);
 $stmt->execute([":qr" => $qr_code]);
@@ -31,7 +29,6 @@ if (!$ingresso) {
     exit;
 }
 
-// ❌ JÁ USADO
 if ($ingresso["usado"] == 1) {
     echo json_encode([
         "status" => "error",
@@ -40,7 +37,6 @@ if ($ingresso["usado"] == 1) {
     exit;
 }
 
-// ✅ MARCAR COMO USADO
 $sql = "UPDATE ingressos 
         SET usado = 1, data_validacao = NOW()
         WHERE id = :id";
