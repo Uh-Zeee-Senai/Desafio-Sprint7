@@ -24,12 +24,18 @@ def main(page: ft.Page):
     imagem_base64 = {"data": None}
     def tratar_imagem(img):
         if not img:
-            return None, "https://via.placeholder.com/400x250"
+            return "https://via.placeholder.com/400x250", None
 
+        # 🔥 URL
         if img.startswith("http"):
             return img, None
 
-        return None, img  # base64
+        # 🔥 BASE64 (verifica tamanho mínimo)
+        if len(img) > 100:
+            return None, img
+
+        # 🔥 NOME DE ARQUIVO (tipo "Skillet.jpg")
+        return "https://via.placeholder.com/400x250", None
 
     # 🔥 FILE PICKER CORRIGIDO
     def file_result(e: ft.FilePickerResultEvent):
@@ -165,7 +171,9 @@ def main(page: ft.Page):
                             src=src,
                             src_base64=b64,
                             height=200,
-                            fit=ft.ImageFit.COVER
+                            width=360,
+                            fit=ft.ImageFit.COVER,
+                            border_radius=10
                         ),
                         ft.Text(evento["nome_evento"], weight="bold", size=18),
                         ft.Text(evento["descricao"], size=13),
