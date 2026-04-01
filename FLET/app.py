@@ -374,6 +374,11 @@ def main(page: ft.Page):
 
         src, b64 = tratar_imagem(evento.get("imagem"))
 
+        if src:
+            b64 = baixar_imagem_base64(src)
+
+        imagem_final = f"data:image/png;base64,{b64}" if b64 else "https://via.placeholder.com/400x250"
+
         def add(e):
             quantidade = int(qtd.value) if qtd.value.isdigit() else 1
 
@@ -388,7 +393,7 @@ def main(page: ft.Page):
 
         page.add(
             ft.Image(
-                src=src if src else f"data:image/png;base64,{b64}",
+                src=imagem_final,
                 height=250,
                 width=400,
                 fit=ft.BoxFit.COVER
