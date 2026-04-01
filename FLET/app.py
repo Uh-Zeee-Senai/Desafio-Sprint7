@@ -29,10 +29,14 @@ def main(page: ft.Page):
     def tratar_imagem(img):
         if not img:
             return "https://via.placeholder.com/400x250", None
+
         if isinstance(img, str) and img.startswith("http"):
+            img = img.replace("localhost", "127.0.0.1")
             return img, None
-        if isinstance(img, str) and len(img) > 100:
-            return None, img
+
+        if isinstance(img, str) and img.startswith("data:image"):
+            return None, img.split(",")[1]
+
         return "https://via.placeholder.com/400x250", None
 
     page.title = "Sistema de Eventos"
@@ -40,7 +44,7 @@ def main(page: ft.Page):
     page.scroll = ft.ScrollMode.AUTO
     page.bgcolor = "#0f172a"
 
-    # APP BAR
+    # -------- APP BAR -------------------------------------------------------------------------------------------------
     def app_bar(titulo):
         page.appbar = ft.AppBar(
             title=ft.Text(titulo, size=20, weight="bold"),
@@ -60,14 +64,14 @@ def main(page: ft.Page):
         carrinho.clear()
         tela_login()
 
-    # QR
+    # -------- QR ------------------------------------------------------------------------------------------------
     def gerar_qr(texto):
         qr = qrcode.make(texto)
         buffer = BytesIO()
         qr.save(buffer)
         return base64.b64encode(buffer.getvalue()).decode()
 
-    # LOGIN
+    # -------- LOGIN ------------------------------------------------------------------------------------------------
     def tela_login():
         page.clean()
         app_bar("Login")
@@ -122,7 +126,7 @@ def main(page: ft.Page):
             )
         )
 
-    # CADASTRO
+    # -------- CADASTRO ------------------------------------------------------------------------------------------------
     def tela_cadastro():
         page.clean()
         app_bar("Cadastro")
@@ -171,7 +175,7 @@ def main(page: ft.Page):
             )
         )
 
-    # VITRINE (com ADMIN restaurado)
+    # -------- VITRINE -------------------------------------------------------------------------------------------------
     def tela_vitrine():
         page.clean()
         app_bar("Eventos")
@@ -191,7 +195,7 @@ def main(page: ft.Page):
                     bgcolor="#1e293b",
                     border_radius=15,
                     content=ft.Column([
-                        ft.Image(src=src, height=200, width=360, fit=ft.BoxFit.COVER),
+                        ft.Image(src=src if src else f"data:image/png;base64,{b64}", height=200, width=360, fit=ft.BoxFit.COVER),
                         ft.Text(evento["nome_evento"], weight="bold", size=18),
                         ft.Text(evento["descricao"], size=13),
                         ft.Text(f"R$ {evento['preco']}"),
@@ -209,7 +213,6 @@ def main(page: ft.Page):
                 )
             )
 
-        # 🔥 PAINEL ADMIN RESTAURADO
         if usuario_admin:
             page.add(
                 ft.Container(
@@ -308,7 +311,7 @@ def main(page: ft.Page):
                 "descricao": descricao.value,
                 "data_evento": data.value,
                 "preco": preco.value,
-                "imagem": imagem_url["data"]  # opcional trocar imagem
+                "imagem": imagem_url["data"]
             })
 
             dados = r.json()

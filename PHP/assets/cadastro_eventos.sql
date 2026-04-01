@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3308
--- Generation Time: Mar 27, 2026 at 02:28 PM
+-- Generation Time: Apr 01, 2026 at 12:36 PM
 -- Server version: 8.4.3
 -- PHP Version: 8.3.30
 
@@ -41,10 +41,10 @@ CREATE TABLE `eventos` (
 --
 
 INSERT INTO `eventos` (`id`, `nome_evento`, `descricao`, `data_evento`, `preco`, `imagem`) VALUES
-(1, 'Show de Rock', 'Evento musical ao vivo', '2026-05-10', 50.00, NULL),
-(2, 'Palestra Tech', 'Tecnologia e inovação', '2026-06-15', 30.00, NULL),
-(3, 'Festival Gamer', 'Jogos e competições', '2026-07-20', 70.00, NULL),
-(7, 'Cinema', 'Assistir Miranha 4', '2026-08-30', 30.00, NULL);
+(1, 'Show de Rock', 'Evento musical ao vivo', '2026-05-10', 50.00, 'http://localhost/Desafio_Sprint/PHP/Uploads/1774635693_Skillet.jpg'),
+(2, 'Palestra Tech', 'Tecnologia e inovação', '2026-06-15', 30.00, 'http://localhost/Desafio_Sprint/PHP/Uploads/1774635678_Palestra.jpg'),
+(3, 'Festival Gamer', 'Jogos e competições', '2026-07-20', 70.00, 'http://localhost/Desafio_Sprint/PHP/Uploads/1774636207_Festival.jpg'),
+(7, 'Cinema', 'Assistir Miranha 4', '2026-08-30', 30.00, 'http://localhost/Desafio_Sprint/PHP/Uploads/1774636284_Cinema.jpg');
 
 -- --------------------------------------------------------
 
@@ -65,15 +65,6 @@ CREATE TABLE `ingressos` (
   `valor` decimal(10,2) DEFAULT NULL,
   `data_validacao` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `ingressos`
---
-
-INSERT INTO `ingressos` (`id`, `id_usuario`, `id_evento`, `data_compra`, `qr_code`, `usado`, `codigo_compra`, `status`, `pagamento`, `valor`, `data_validacao`) VALUES
-(46, 7, 3, '2026-03-25 14:45:43', 'ING_69c41f471a762|3', 0, 'ING_69c41f471a762', 'valido', 'pix', 70.00, NULL),
-(47, 7, 1, '2026-03-25 16:14:48', 'ING_69c43428d1f19|1', 0, 'ING_69c43428d1f19', 'valido', 'pix', 50.00, NULL),
-(48, 7, 1, '2026-03-27 09:33:05', 'ING_69c6790125805|1', 0, 'ING_69c6790125805', 'valido', 'boleto', 50.00, NULL);
 
 -- --------------------------------------------------------
 
@@ -135,13 +126,13 @@ ALTER TABLE `eventos`
 -- AUTO_INCREMENT for table `ingressos`
 --
 ALTER TABLE `ingressos`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=49;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=57;
 
 --
 -- AUTO_INCREMENT for table `usuarios`
 --
 ALTER TABLE `usuarios`
-  MODIFY `id_usuario` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
+  MODIFY `id_usuario` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
 
 --
 -- Constraints for dumped tables
