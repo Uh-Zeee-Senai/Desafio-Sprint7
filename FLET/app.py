@@ -17,7 +17,6 @@ API_DELETAR_EVENTO = "http://localhost/Desafio_Sprint/php/api/deletar_evento.php
 API_FEEDBACK_IMAGEM = "http://localhost/Desafio_Sprint/php/api/feedback_imagem.php"
 UPLOAD_HTML = "http://localhost/Desafio_Sprint/php/assets/upload.html"
 
-
 usuario_logado = None
 usuario_admin = False
 carrinho = []
@@ -26,18 +25,14 @@ def main(page: ft.Page):
     global usuario_logado, usuario_admin, carrinho
 
     imagem_url = {"data": None}
+
     def tratar_imagem(img):
         if not img:
             return "https://via.placeholder.com/400x250", None
-
-        # 🔥 Se for URL
         if isinstance(img, str) and img.startswith("http"):
             return img, None
-
-        # 🔥 Se for base64 (caso futuro)
         if isinstance(img, str) and len(img) > 100:
             return None, img
-
         return "https://via.placeholder.com/400x250", None
 
     page.title = "Sistema de Eventos"
@@ -45,16 +40,16 @@ def main(page: ft.Page):
     page.scroll = ft.ScrollMode.AUTO
     page.bgcolor = "#0f172a"
 
-    # -------- APP BAR -------------------------------------------------------------------------------------------
+    # APP BAR
     def app_bar(titulo):
         page.appbar = ft.AppBar(
             title=ft.Text(titulo, size=20, weight="bold"),
-            bgcolor=ft.colors.BLUE_700,
+            bgcolor=ft.Colors.BLUE_700,
             center_title=True,
             actions=[
-                ft.IconButton(icon=ft.icons.SHOPPING_CART, on_click=lambda e: tela_carrinho()),
-                ft.IconButton(icon=ft.icons.CONFIRMATION_NUMBER, on_click=lambda e: tela_wallet()),
-                ft.IconButton(icon=ft.icons.LOGOUT, on_click=lambda e: logout())
+                ft.IconButton(icon=ft.Icons.SHOPPING_CART, on_click=lambda e: tela_carrinho()),
+                ft.IconButton(icon=ft.Icons.CONFIRMATION_NUMBER, on_click=lambda e: tela_wallet()),
+                ft.IconButton(icon=ft.Icons.LOGOUT, on_click=lambda e: logout())
             ]
         )
 
@@ -65,35 +60,20 @@ def main(page: ft.Page):
         carrinho.clear()
         tela_login()
 
-    # -------- QR CODE ----------------------------------------------------------------------------------------
+    # QR
     def gerar_qr(texto):
         qr = qrcode.make(texto)
         buffer = BytesIO()
         qr.save(buffer)
         return base64.b64encode(buffer.getvalue()).decode()
 
-    # -------- LOGIN ---------------------------------------------------------------------------------------
+    # LOGIN
     def tela_login():
         page.clean()
         app_bar("Login")
 
-        print("LOGIN REMASTERIZADO")
-
-        email = ft.TextField(
-            label="Email",
-            width=350,
-            border_radius=10,
-            filled=True
-        )
-
-        senha = ft.TextField(
-            label="Senha",
-            password=True,
-            width=350,
-            border_radius=10,
-            filled=True
-        )
-
+        email = ft.TextField(label="Email", width=350, border_radius=10, filled=True)
+        senha = ft.TextField(label="Senha", password=True, width=350, border_radius=10, filled=True)
         msg = ft.Text()
 
         def login(e):
@@ -116,61 +96,33 @@ def main(page: ft.Page):
                 page.update()
 
         page.add(
-            ft.Row(
-                alignment="center",
-                vertical_alignment="center",
+            ft.Container(
                 expand=True,
-                controls=[
-                    ft.Container(
-                        width=420,
-                        padding=30,
-                        bgcolor="#1e293b",
-                        border_radius=20,
-                        shadow=[
-                            ft.BoxShadow(
-                                blur_radius=20,
-                                color=ft.colors.BLACK54,
-                                offset=ft.Offset(0, 5)
-                            )
+                alignment=ft.Alignment(0, 0),
+                content=ft.Container(
+                    width=420,
+                    padding=30,
+                    bgcolor="#1e293b",
+                    border_radius=20,
+                    shadow=[ft.BoxShadow(blur_radius=20, color=ft.Colors.BLACK_54, offset=ft.Offset(0, 5))],
+                    content=ft.Column(
+                        [
+                            ft.Text("🎟 Sistema de Eventos", size=26, weight="bold", text_align=ft.TextAlign.CENTER),
+                            ft.Text("Faça login para continuar", size=14, color="gray", text_align=ft.TextAlign.CENTER),
+                            email,
+                            senha,
+                            ft.Button("Entrar", width=350, height=45, on_click=login),
+                            ft.TextButton("Criar conta", on_click=lambda e: tela_cadastro()),
+                            msg
                         ],
-                        content=ft.Column(
-                            [
-                                ft.Text("🎟 Sistema de Eventos",
-                                        size=26,
-                                        weight="bold",
-                                        text_align=ft.TextAlign.CENTER),
-
-                                ft.Text("Faça login para continuar",
-                                        size=14,
-                                        color="gray",
-                                        text_align=ft.TextAlign.CENTER),
-
-                                email,
-                                senha,
-
-                                ft.ElevatedButton(
-                                    "Entrar",
-                                    width=350,
-                                    height=45,
-                                    on_click=login
-                                ),
-
-                                ft.TextButton(
-                                    "Criar conta",
-                                    on_click=lambda e: tela_cadastro()
-                                ),
-
-                                msg
-                            ],
-                            horizontal_alignment="center",
-                            spacing=15
-                        )
+                        horizontal_alignment=ft.Alignment(0, 0),
+                        spacing=15
                     )
-                ]
+                )
             )
         )
 
-    # -------- CADASTRO -----------------------------------------------------------------------------------
+    # CADASTRO
     def tela_cadastro():
         page.clean()
         app_bar("Cadastro")
@@ -178,7 +130,6 @@ def main(page: ft.Page):
         nome = ft.TextField(label="Nome", width=350, border_radius=10, filled=True)
         email = ft.TextField(label="Email", width=350, border_radius=10, filled=True)
         senha = ft.TextField(label="Senha", password=True, width=350, border_radius=10, filled=True)
-
         msg = ft.Text()
 
         def cadastrar(e):
@@ -196,60 +147,36 @@ def main(page: ft.Page):
         page.add(
             ft.Container(
                 expand=True,
-                alignment=ft.alignment.center,
+                alignment=ft.Alignment(0, 0),
                 content=ft.Container(
                     width=420,
                     padding=30,
                     bgcolor="#1e293b",
                     border_radius=20,
-                    shadow=ft.BoxShadow(
-                            blur_radius=20,
-                            color=ft.colors.BLACK54,
-                            offset=ft.Offset(0, 5)
-                        ),
+                    shadow=[ft.BoxShadow(blur_radius=20, color=ft.Colors.BLACK_54, offset=ft.Offset(0, 5))],
                     content=ft.Column(
                         [
-                            ft.Text("📝 Criar Conta",
-                                    size=26,
-                                    weight="bold",
-                                    text_align=ft.TextAlign.CENTER),
-
+                            ft.Text("📝 Criar Conta", size=26, weight="bold", text_align=ft.TextAlign.CENTER),
                             nome,
                             email,
                             senha,
-
-                            ft.ElevatedButton(
-                                "Cadastrar",
-                                width=350,
-                                height=45,
-                                on_click=cadastrar
-                            ),
-
-                            ft.TextButton(
-                                "Voltar",
-                                on_click=lambda e: tela_login()
-                            ),
-
+                            ft.Button("Cadastrar", width=350, height=45, on_click=cadastrar),
+                            ft.TextButton("Voltar", on_click=lambda e: tela_login()),
                             msg
                         ],
-                        horizontal_alignment="center",
+                        horizontal_alignment=ft.Alignment(0, 0),
                         spacing=15
                     )
                 )
             )
         )
 
-# -------- VITRINE -----------------------------------------------------------------------------------
+    # VITRINE (com ADMIN restaurado)
     def tela_vitrine():
         page.clean()
         app_bar("Eventos")
 
-        grid = ft.GridView(
-            expand=True,
-            max_extent=420,
-            spacing=20,
-            run_spacing=20
-        )
+        grid = ft.GridView(expand=True, max_extent=420, spacing=20, run_spacing=20)
 
         r = requests.get(API_EVENTOS)
         dados = r.json()
@@ -264,51 +191,38 @@ def main(page: ft.Page):
                     bgcolor="#1e293b",
                     border_radius=15,
                     content=ft.Column([
-                        ft.Image(
-                            src=src,
-                            src_base64=b64,
-                            height=200,
-                            width=360,
-                            fit=ft.ImageFit.COVER,
-                            border_radius=10
-                        ),
+                        ft.Image(src=src, height=200, width=360, fit=ft.BoxFit.COVER),
                         ft.Text(evento["nome_evento"], weight="bold", size=18),
                         ft.Text(evento["descricao"], size=13),
-                        ft.Text(f"R$ {evento['preco']}", size=16),
-
-                        ft.Row([
-                            ft.ElevatedButton(
-                                "Ver Evento",
-                                on_click=lambda e, ev=evento: tela_evento(ev)
-                            ),
-                            ft.IconButton(
-                                icon=ft.icons.EDIT,
-                                visible=usuario_admin,
-                                on_click=lambda e, ev=evento: tela_editar_evento(ev)
-                            ),
-                            ft.IconButton(
-                                icon=ft.icons.DELETE,
-                                visible=usuario_admin,
-                                on_click=lambda e, ev=evento: excluir_evento(ev["id"])
-                            )
-                        ], alignment="spaceBetween")
+                        ft.Text(f"R$ {evento['preco']}"),
+                        ft.Row(
+                            [
+                                ft.Button("Ver Evento", on_click=lambda e, ev=evento: tela_evento(ev)),
+                                ft.IconButton(icon=ft.Icons.EDIT, visible=usuario_admin,
+                                              on_click=lambda e, ev=evento: tela_editar_evento(ev)),
+                                ft.IconButton(icon=ft.Icons.DELETE, visible=usuario_admin,
+                                              on_click=lambda e, ev=evento: excluir_evento(ev["id"]))
+                            ],
+                            alignment=ft.MainAxisAlignment.SPACE_BETWEEN
+                        )
                     ])
                 )
             )
 
+        # 🔥 PAINEL ADMIN RESTAURADO
         if usuario_admin:
             page.add(
                 ft.Container(
+                    bgcolor="#1e293b",
+                    padding=10,
+                    border_radius=10,
                     content=ft.Column([
                         ft.Text("🔧 Painel Admin", size=20, weight="bold"),
                         ft.Row([
-                            ft.ElevatedButton("➕ Criar Evento", on_click=lambda e: tela_criar_evento()),
-                            ft.ElevatedButton("🎫 Validar Ingresso", on_click=lambda e: tela_validar())
+                            ft.Button("➕ Criar Evento", on_click=lambda e: tela_criar_evento()),
+                            ft.Button("🎫 Validar Ingresso", on_click=lambda e: tela_validar())
                         ])
-                    ]),
-                    bgcolor="#1e293b",
-                    padding=10,
-                    border_radius=10
+                    ])
                 )
             )
 
@@ -368,9 +282,9 @@ def main(page: ft.Page):
 
         page.add(
             nome, descricao, data, preco,
-            ft.ElevatedButton("Selecionar Imagem", on_click=lambda e: abrir_upload()),
-            ft.ElevatedButton("Confirmar Upload", on_click=lambda e: confirmar_upload(msg)),
-            ft.ElevatedButton("Criar", on_click=criar),
+            ft.Button("Selecionar Imagem", on_click=lambda e: abrir_upload()),
+            ft.Button("Confirmar Upload", on_click=lambda e: confirmar_upload(msg)),
+            ft.Button("Criar", on_click=criar),
             msg,
             ft.TextButton("Voltar", on_click=lambda e: tela_vitrine())
         )
@@ -404,9 +318,9 @@ def main(page: ft.Page):
 
         page.add(
             nome, descricao, data, preco,
-            ft.ElevatedButton("Selecionar Imagem", on_click=lambda e: abrir_upload()),
-            ft.ElevatedButton("Confirmar Upload", on_click=lambda e: confirmar_upload(msg)),
-            ft.ElevatedButton("Salvar", on_click=salvar),
+            ft.Button("Selecionar Imagem", on_click=lambda e: abrir_upload()),
+            ft.Button("Confirmar Upload", on_click=lambda e: confirmar_upload(msg)),
+            ft.Button("Salvar", on_click=salvar),
             msg,
             ft.TextButton("Voltar", on_click=lambda e: tela_vitrine())
         )
@@ -453,23 +367,22 @@ def main(page: ft.Page):
                 "quantidade": quantidade
             })
 
-            page.snack_bar = ft.SnackBar(ft.Text("Adicionado"))
+            page.snack_bar = ft.SnackBar(content=ft.Text("Adicionado"))
             page.snack_bar.open = True
             page.update()
 
         page.add(
             ft.Image(
-                src=src,
-                src_base64=b64,
+                src=src if src else f"data:image/png;base64,{b64}",
                 height=250,
                 width=400,
-                fit=ft.ImageFit.COVER
+                fit=ft.BoxFit.COVER
             ),
             ft.Text(evento["nome_evento"], size=22, weight="bold"),
             ft.Text(evento["descricao"]),
             ft.Text(f"R$ {evento['preco']}"),
             ft.Row([ft.Text("Qtd"), qtd]),
-            ft.ElevatedButton("Adicionar", on_click=add),
+            ft.Button("Adicionar", on_click=add),
             ft.TextButton("Voltar", on_click=lambda e: tela_vitrine())
         )
 
@@ -495,14 +408,14 @@ def main(page: ft.Page):
             lista.controls.append(
                 ft.Row([
                     ft.Text(f"{ev['nome_evento']} x{qtd}"),
-                    ft.IconButton(icon=ft.icons.DELETE, on_click=remover)
+                    ft.IconButton(icon=ft.Icons.DELETE, on_click=remover)
                 ])
             )
 
         page.add(
             lista,
             ft.Text(f"Total: R$ {total:.2f}"),
-            ft.ElevatedButton("Finalizar", on_click=lambda e: tela_pagamento(total)),
+            ft.Button("Finalizar", on_click=lambda e: tela_pagamento(total)),
             ft.TextButton("Voltar", on_click=lambda e: tela_vitrine())
         )
 
@@ -554,10 +467,10 @@ def main(page: ft.Page):
         page.add(
             ft.Text(f"Total: R$ {total:.2f}"),
             metodo,
-            ft.ElevatedButton("Pagar", on_click=pagar),
+            ft.Button("Pagar", on_click=pagar),
             resultado,
             ft.TextButton("Voltar", on_click=lambda e: tela_carrinho()),
-            ft.ElevatedButton("Ver Ingressos", on_click=lambda e: tela_wallet())
+            ft.Button("Ver Ingressos", on_click=lambda e: tela_wallet())
         )
 
     # -------- WALLET ------------------------------------------------------------------------------------
@@ -585,7 +498,7 @@ def main(page: ft.Page):
                             ft.Text(ing["titulo"], weight="bold"),
                             ft.Text(f"Código: {ing['codigo_compra']}"),
                             ft.Text(status),
-                            ft.Image(src_base64=qr, width=120)
+                            ft.Image(src=f"data:image/png;base64,{qr}", width=120)
                         ])
                     )
                 )
@@ -618,8 +531,8 @@ def main(page: ft.Page):
         page.add(
             campo,
             ft.Row([
-                ft.ElevatedButton("Validar", on_click=validar),
-                ft.ElevatedButton("📷 Câmera", on_click=abrir_camera)
+                ft.Button("Validar", on_click=validar),
+                ft.Button("📷 Câmera", on_click=abrir_camera)
             ]), 
             resultado
         )
@@ -627,4 +540,4 @@ def main(page: ft.Page):
     tela_login()
 
 
-ft.app(target=main)
+ft.run(main)
