@@ -21,6 +21,13 @@ usuario_logado = None
 usuario_admin = False
 carrinho = []
 
+def baixar_imagem_base64(url):
+    try:
+        r = requests.get(url)
+        return base64.b64encode(r.content).decode()
+    except:
+        return None
+
 def main(page: ft.Page):
     global usuario_logado, usuario_admin, carrinho
 
@@ -28,7 +35,7 @@ def main(page: ft.Page):
 
     def tratar_imagem(img):
         if not img:
-            return "https://via.placeholder.com/400x250", None
+            return None, None
 
         if isinstance(img, str) and img.startswith("http"):
             img = img.replace("localhost", "127.0.0.1")
@@ -37,7 +44,7 @@ def main(page: ft.Page):
         if isinstance(img, str) and img.startswith("data:image"):
             return None, img.split(",")[1]
 
-        return "https://via.placeholder.com/400x250", None
+        return None, None
 
     page.title = "Sistema de Eventos"
     page.theme_mode = ft.ThemeMode.DARK
@@ -177,59 +184,64 @@ def main(page: ft.Page):
 
     # -------- VITRINE -------------------------------------------------------------------------------------------------
     def tela_vitrine():
-        page.clean()
-        app_bar("Eventos")
+            page.clean()
+            app_bar("Eventos")
 
-        grid = ft.GridView(expand=True, max_extent=420, spacing=20, run_spacing=20)
+            grid = ft.GridView(expand=True, max_extent=420, spacing=20, run_spacing=20)
 
-        r = requests.get(API_EVENTOS)
-        dados = r.json()
+            r = requests.get(API_EVENTOS)
+            dados = r.json()
 
-        for evento in dados["dados"]:
-            src, b64 = tratar_imagem(evento.get("imagem"))
+            for evento in dados["dados"]:
+                src, b64 = tratar_imagem(evento.get("imagem"))
 
-            grid.controls.append(
-                ft.Container(
-                    width=380,
-                    padding=15,
-                    bgcolor="#1e293b",
-                    border_radius=15,
-                    content=ft.Column([
-                        ft.Image(src=src if src else f"data:image/png;base64,{b64}", height=200, width=360, fit=ft.BoxFit.COVER),
-                        ft.Text(evento["nome_evento"], weight="bold", size=18),
-                        ft.Text(evento["descricao"], size=13),
-                        ft.Text(f"R$ {evento['preco']}"),
-                        ft.Row(
-                            [
-                                ft.Button("Ver Evento", on_click=lambda e, ev=evento: tela_evento(ev)),
-                                ft.IconButton(icon=ft.Icons.EDIT, visible=usuario_admin,
-                                              on_click=lambda e, ev=evento: tela_editar_evento(ev)),
-                                ft.IconButton(icon=ft.Icons.DELETE, visible=usuario_admin,
-                                              on_click=lambda e, ev=evento: excluir_evento(ev["id"]))
-                            ],
-                            alignment=ft.MainAxisAlignment.SPACE_BETWEEN
-                        )
-                    ])
-                )
-            )
+                if src:
+                    b64 = baixar_imagem_base64(src)
 
-        if usuario_admin:
-            page.add(
-                ft.Container(
-                    bgcolor="#1e293b",
-                    padding=10,
-                    border_radius=10,
-                    content=ft.Column([
-                        ft.Text("🔧 Painel Admin", size=20, weight="bold"),
-                        ft.Row([
-                            ft.Button("➕ Criar Evento", on_click=lambda e: tela_criar_evento()),
-                            ft.Button("🎫 Validar Ingresso", on_click=lambda e: tela_validar())
+                imagem_final = f"data:image/png;base64,{b64}" if b64 else "https://via.placeholder.com/400x250"
+
+                grid.controls.append(
+                    ft.Container(
+                        width=380,
+                        padding=15,
+                        bgcolor="#1e293b",
+                        border_radius=15,
+                        content=ft.Column([
+                            ft.Image(src=imagem_final, height=200, width=360, fit=ft.BoxFit.COVER),
+                            ft.Text(evento["nome_evento"], weight="bold", size=18),
+                            ft.Text(evento["descricao"], size=13),
+                            ft.Text(f"R$ {evento['preco']}"),
+                            ft.Row(
+                                [
+                                    ft.Button("Ver Evento", on_click=lambda e, ev=evento: tela_evento(ev)),
+                                    ft.IconButton(icon=ft.Icons.EDIT, visible=usuario_admin,
+                                                on_click=lambda e, ev=evento: tela_editar_evento(ev)),
+                                    ft.IconButton(icon=ft.Icons.DELETE, visible=usuario_admin,
+                                                on_click=lambda e, ev=evento: excluir_evento(ev["id"]))
+                                ],
+                                alignment=ft.MainAxisAlignment.SPACE_BETWEEN
+                            )
                         ])
-                    ])
+                    )
                 )
-            )
 
-        page.add(grid)
+            if usuario_admin:
+                page.add(
+                    ft.Container(
+                        bgcolor="#1e293b",
+                        padding=10,
+                        border_radius=10,
+                        content=ft.Column([
+                            ft.Text("🔧 Painel Admin", size=20, weight="bold"),
+                            ft.Row([
+                                ft.Button("➕ Criar Evento", on_click=lambda e: tela_criar_evento()),
+                                ft.Button("🎫 Validar Ingresso", on_click=lambda e: tela_validar())
+                            ])
+                        ])
+                    )
+                )
+
+            page.add(grid)
 
 # -------- UPLOAD IMAGEM ---------------------------------------------------------------------------
     def abrir_upload():
