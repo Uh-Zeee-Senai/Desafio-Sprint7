@@ -1,20 +1,11 @@
 <?php
 
-if (!isset($_SESSION["user_id"])) {
-    echo "Faça login";
-    exit;
-}
-
 if ($_SESSION["is_admin"] != 1) {
-    echo "Apenas admin pode criar";
+    echo "<p>Apenas admin</p>";
     exit;
 }
-
-$imagem = "";
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-
-    $imagem = $_POST["imagem"] ?? "";
 
     $dados = [
         "user_id" => $_SESSION["user_id"],
@@ -22,7 +13,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         "descricao" => $_POST["descricao"],
         "data_evento" => $_POST["data_evento"],
         "preco" => $_POST["preco"],
-        "imagem" => $imagem
+        "imagem" => $_POST["imagem"]
     ];
 
     $ch = curl_init("http://localhost/Desafio_Sprint/php/api/criar_evento.php");
@@ -39,35 +30,33 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 }
 ?>
 
-<h1>➕ Criar Evento</h1>
+<div class="card">
+<h2>➕ Criar Evento</h2>
 
 <form method="POST">
 
-    <input name="nome_evento" placeholder="Nome"><br><br>
-    <input name="descricao" placeholder="Descrição"><br><br>
-    <input name="data_evento" placeholder="Data (YYYY-MM-DD)"><br><br>
-    <input name="preco" placeholder="Preço"><br><br>
+<input name="nome_evento" placeholder="Nome" required>
+<input name="descricao" placeholder="Descrição" required>
+<input name="data_evento" placeholder="YYYY-MM-DD" required>
+<input name="preco" placeholder="Preço" required>
 
-    <input type="hidden" name="imagem" id="imagem">
+<input type="hidden" name="imagem" id="imagem">
 
-    <button type="button" onclick="abrirUpload()">📷 Selecionar Imagem</button>
-    <button type="button" onclick="confirmarImagem()">✔ Confirmar Upload</button>
+<button type="button" onclick="abrirUpload()">📷 Upload</button>
+<button type="button" onclick="confirmarImagem()">✔ Confirmar</button>
 
-    <p id="status"></p>
+<p id="status"></p>
 
-    <br>
-    <button type="submit">Criar</button>
+<button type="submit">Criar Evento</button>
+
 </form>
 
-<?php
-if (isset($resultado)) {
-    echo "<p>{$resultado["message"]}</p>";
-}
-?>
+<?php if (isset($resultado)) echo "<p>{$resultado["message"]}</p>"; ?>
+</div>
 
 <script>
 function abrirUpload(){
-    window.open("http://localhost/Desafio_Sprint/php/assets/upload.html", "_blank");
+    window.open("http://localhost/Desafio_Sprint/php/assets/upload.html");
 }
 
 function confirmarImagem(){
@@ -76,9 +65,7 @@ function confirmarImagem(){
     .then(data => {
         if(data.status === "success"){
             document.getElementById("imagem").value = data.url;
-            document.getElementById("status").innerText = "Imagem carregada!";
-        } else {
-            document.getElementById("status").innerText = data.message;
+            document.getElementById("status").innerText = "Imagem OK";
         }
     });
 }

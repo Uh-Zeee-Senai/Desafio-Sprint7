@@ -16,9 +16,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["login"])) {
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_POST, true);
     curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($dados));
-    curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        "Content-Type: application/json"
-    ]);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, ["Content-Type: application/json"]);
 
     $response = curl_exec($ch);
     curl_close($ch);
@@ -44,91 +42,148 @@ if (isset($_GET["logout"])) {
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Painel de Eventos</title>
+<title>Painel AccessPass</title>
 
-    <style>
-        img {
-            height: 150px;
-            object-fit: cover;
-        }
+<style>
+body {
+    margin: 0;
+    font-family: 'Segoe UI';
+    background: #0f172a;
+    color: white;
+}
 
-        .card:hover {
-            transform: scale(1.02);
-            transition: 0.2s;
-        }
-        body {
-            background: #0f172a;
-            color: white;
-            font-family: Arial;
-            text-align: center;
-        }
+/* NAVBAR */
+.navbar {
+    background: #1e293b;
+    padding: 15px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
 
-        .card {
-            background: #1e293b;
-            padding: 20px;
-            border-radius: 15px;
-            width: 350px;
-            margin: 20px auto;
-        }
+.navbar h1 {
+    margin: 0;
+    font-size: 20px;
+}
 
-        input {
-            width: 90%;
-            padding: 10px;
-            margin: 5px;
-            border-radius: 8px;
-            border: none;
-        }
+.navbar a {
+    color: #3b82f6;
+    margin-left: 15px;
+    text-decoration: none;
+}
 
-        button {
-            background: #2563eb;
-            color: white;
-            border: none;
-            padding: 10px;
-            border-radius: 8px;
-            cursor: pointer;
-            width: 95%;
-        }
+/* CONTAINER */
+.container {
+    padding: 30px;
+}
 
-        a {
-            color: #3b82f6;
-            margin: 10px;
-            text-decoration: none;
-        }
+/* CARD */
+.card {
+    background: #1e293b;
+    padding: 20px;
+    border-radius: 15px;
+    max-width: 400px;
+    margin: auto;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+}
 
-        .erro {
-            color: red;
-        }
-    </style>
+/* INPUT */
+input {
+    width: 100%;
+    padding: 10px;
+    margin-top: 10px;
+    border-radius: 8px;
+    border: none;
+    background: #0f172a;
+    color: white;
+}
+
+/* BUTTON */
+button {
+    width: 100%;
+    padding: 10px;
+    margin-top: 10px;
+    border-radius: 8px;
+    border: none;
+    background: #2563eb;
+    color: white;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #1d4ed8;
+}
+
+/* GRID */
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+/* EVENT CARD */
+.event-card {
+    background: #1e293b;
+    border-radius: 15px;
+    overflow: hidden;
+}
+
+.event-card img {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+}
+
+.event-body {
+    padding: 15px;
+}
+
+.event-body p {
+    color: #cbd5f5;
+}
+
+/* BUTTONS INLINE */
+.actions a {
+    margin-right: 10px;
+    color: #3b82f6;
+    text-decoration: none;
+}
+</style>
+
 </head>
-
 <body>
 
-<h1>🎟 Painel Admin</h1>
+<div class="navbar">
+    <h1>🎟 AccessPass</h1>
+
+    <?php if(isset($_SESSION["user_id"])): ?>
+        <div>
+            <a href="?page=eventos">Eventos</a>
+            <?php if($_SESSION["is_admin"] == 1): ?>
+                <a href="?page=criar">Criar</a>
+            <?php endif; ?>
+            <a href="?logout=1">Sair</a>
+        </div>
+    <?php endif; ?>
+</div>
+
+<div class="container">
 
 <?php if (!isset($_SESSION["user_id"])): ?>
 
-    <!-- LOGIN -->
     <div class="card">
         <h2>Login</h2>
 
         <form method="POST">
-            <input type="text" name="email" placeholder="Email" required>
+            <input name="email" placeholder="Email" required>
             <input type="password" name="senha" placeholder="Senha" required>
             <button name="login">Entrar</button>
         </form>
 
-        <?php if (isset($erro_login)) echo "<p class='erro'>$erro_login</p>"; ?>
+        <?php if (isset($erro_login)) echo "<p>$erro_login</p>"; ?>
     </div>
 
 <?php else: ?>
-
-    <p>Logado como ID: <?= $_SESSION["user_id"] ?></p>
-
-    <a href="?page=eventos">Eventos</a> |
-    <a href="?page=criar">Criar Evento</a> |
-    <a href="?logout=1">Sair</a>
-
-    <hr>
 
     <?php
     switch ($page) {
@@ -162,13 +217,12 @@ if (isset($_GET["logout"])) {
 
             header("Location: index.php?page=eventos");
             break;
-
-        default:
-            echo "Página não encontrada";
     }
     ?>
 
 <?php endif; ?>
+
+</div>
 
 </body>
 </html>

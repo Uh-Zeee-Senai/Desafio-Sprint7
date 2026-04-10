@@ -6,20 +6,26 @@ $dados = json_decode($response, true);
 
 <h2>📅 Eventos</h2>
 
-<div style="display:flex; flex-wrap:wrap; gap:20px; justify-content:center;">
+<div class="grid">
 
 <?php foreach ($dados["dados"] as $e): ?>
 
-<div style="background:#1e293b; padding:15px; border-radius:10px; width:300px;">
+<div class="event-card">
 
-    <img src="<?= $e["imagem"] ?>" style="width:100%; border-radius:10px;"><br><br>
+    <img src="<?= $e["imagem"] ?>">
 
-    <b><?= $e["nome_evento"] ?></b><br>
-    <?= $e["descricao"] ?><br>
-    <b>R$ <?= $e["preco"] ?></b><br><br>
+    <div class="event-body">
+        <h3><?= $e["nome_evento"] ?></h3>
+        <p><?= $e["descricao"] ?></p>
+        <b>R$ <?= $e["preco"] ?></b>
 
-    <a href="?page=editar&id=<?= $e["id"] ?>">✏️ Editar</a> |
-    <a href="?page=deletar&id=<?= $e["id"] ?>" onclick="return confirm('Excluir?')">🗑 Deletar</a>
+        <?php if($_SESSION["is_admin"] == 1): ?>
+        <div class="actions">
+            <a href="?page=editar&id=<?= $e["id"] ?>">✏️ Editar</a>
+            <a href="?page=deletar&id=<?= $e["id"] ?>">🗑 Deletar</a>
+        </div>
+        <?php endif; ?>
+    </div>
 
 </div>
 
