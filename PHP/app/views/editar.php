@@ -32,7 +32,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         "descricao" => $_POST["descricao"],
         "data_evento" => $_POST["data_evento"],
         "preco" => $_POST["preco"],
-        "imagem" => null
+        "imagem" => $_POST["imagem"] ?? null
     ];
 
     $ch = curl_init("http://localhost/Desafio_Sprint/php/api/editar_evento.php");
@@ -58,6 +58,31 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <input name="descricao" value="<?= $evento["descricao"] ?>"><br><br>
     <input name="data_evento" value="<?= $evento["data_evento"] ?>"><br><br>
     <input name="preco" value="<?= $evento["preco"] ?>"><br><br>
+    <input type="hidden" name="imagem" id="imagem">
+
+    <button type="button" onclick="abrirUpload()">📷 Trocar Imagem</button>
+    <button type="button" onclick="confirmarImagem()">✔ Confirmar Upload</button>
+
+    <p id="status"></p>
 
     <button>Salvar</button>
 </form>
+
+<script>
+function abrirUpload(){
+    window.open("http://localhost/Desafio_Sprint/php/assets/upload.html", "_blank");
+}
+
+function confirmarImagem(){
+    fetch("http://localhost/Desafio_Sprint/php/api/feedback_imagem.php")
+    .then(res => res.json())
+    .then(data => {
+        if(data.status === "success"){
+            document.getElementById("imagem").value = data.url;
+            document.getElementById("status").innerText = "Imagem atualizada!";
+        } else {
+            document.getElementById("status").innerText = data.message;
+        }
+    });
+}
+</script>

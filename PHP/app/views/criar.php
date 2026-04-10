@@ -1,25 +1,28 @@
 <?php
 
-// BLOQUEIO DE ACESSO
 if (!isset($_SESSION["user_id"])) {
-    echo "Faça login primeiro";
+    echo "Faça login";
     exit;
 }
 
 if ($_SESSION["is_admin"] != 1) {
-    echo "Apenas admin pode criar eventos";
+    echo "Apenas admin pode criar";
     exit;
 }
 
+$imagem = "";
+
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
+
+    $imagem = $_POST["imagem"] ?? "";
 
     $dados = [
         "user_id" => $_SESSION["user_id"],
-        "nome_evento" => $_POST["nome_evento"] ?? "",
-        "descricao" => $_POST["descricao"] ?? "",
-        "data_evento" => $_POST["data_evento"] ?? "",
-        "preco" => $_POST["preco"] ?? "",
-        "imagem" => ""
+        "nome_evento" => $_POST["nome_evento"],
+        "descricao" => $_POST["descricao"],
+        "data_evento" => $_POST["data_evento"],
+        "preco" => $_POST["preco"],
+        "imagem" => $imagem
     ];
 
     $ch = curl_init("http://localhost/Desafio_Sprint/php/api/criar_evento.php");
@@ -27,16 +30,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_POST, true);
     curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($dados));
-    curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        "Content-Type: application/json"
-    ]);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, ["Content-Type: application/json"]);
 
     $response = curl_exec($ch);
-
-    if ($response === false) {
-        echo "Erro cURL: " . curl_error($ch);
-    }
-
     curl_close($ch);
 
     $resultado = json_decode($response, true);
@@ -46,18 +42,44 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <h1>➕ Criar Evento</h1>
 
 <form method="POST">
-    <input type="text" name="nome_evento" placeholder="Nome" required><br><br>
-    <input type="text" name="descricao" placeholder="Descrição" required><br><br>
-    <input type="text" name="data_evento" placeholder="Data" required><br><br>
-    <input type="text" name="preco" placeholder="Preço" required><br><br>
 
+    <input name="nome_evento" placeholder="Nome"><br><br>
+    <input name="descricao" placeholder="Descrição"><br><br>
+    <input name="data_evento" placeholder="Data (YYYY-MM-DD)"><br><br>
+    <input name="preco" placeholder="Preço"><br><br>
+
+    <input type="hidden" name="imagem" id="imagem">
+
+    <button type="button" onclick="abrirUpload()">📷 Selecionar Imagem</button>
+    <button type="button" onclick="confirmarImagem()">✔ Confirmar Upload</button>
+
+    <p id="status"></p>
+
+    <br>
     <button type="submit">Criar</button>
 </form>
 
 <?php
 if (isset($resultado)) {
-    echo "<pre>";
-    print_r($resultado);
-    echo "</pre>";
-}   
+    echo "<p>{$resultado["message"]}</p>";
+}
 ?>
+
+<script>
+function abrirUpload(){
+    window.open("http://localhost/Desafio_Sprint/php/assets/upload.html", "_blank");
+}
+
+function confirmarImagem(){
+    fetch("http://localhost/Desafio_Sprint/php/api/feedback_imagem.php")
+    .then(res => res.json())
+    .then(data => {
+        if(data.status === "success"){
+            document.getElementById("imagem").value = data.url;
+            document.getElementById("status").innerText = "Imagem carregada!";
+        } else {
+            document.getElementById("status").innerText = data.message;
+        }
+    });
+}
+</script>
