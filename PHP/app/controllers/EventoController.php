@@ -13,6 +13,6 @@ class EventoController {
 
         $eventos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        require_once __DIR__ . "/../views/eventos/index.php";
+        require_once __DIR__ . "/../views/eventos.php";
     }
 }
